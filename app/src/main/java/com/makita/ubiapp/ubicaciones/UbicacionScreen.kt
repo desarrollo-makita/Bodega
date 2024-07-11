@@ -1,12 +1,12 @@
 package com.makita.ubiapp.ubicaciones
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -23,15 +24,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
 import com.makita.ubiapp.ActualizaUbicacionRequest
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.UbicacionResponse
+import com.makita.ubiapp.database.AppDatabase
+import com.makita.ubiapp.entity.LoginEntity
+
 
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 
 @Composable
@@ -39,13 +48,30 @@ fun UbicacionScreen() {
 
     val apiService = RetrofitClient.apiService
     var text by remember { mutableStateOf(TextFieldValue()) }
+    var textBD by remember { mutableStateOf(TextFieldValue()) }
     var response by remember { mutableStateOf<List<UbicacionResponse>>(emptyList()) }
     var clearRequested by remember { mutableStateOf(false) }
     var nuevaUbicacion by remember { mutableStateOf(TextFieldValue()) }
     var errorState by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
-    val scanItemFocusRequester = remember { FocusRequester()}
     val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
+    var logins by remember { mutableStateOf<List<LoginEntity>>(emptyList()) }
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val loginDao = db.loginDao()
+
+
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                logins = loginDao.getAllLogins()
+                Log.d("MAKITA", "SQLITE getAllLogins: ${logins}")
+            } catch (e: Exception) {
+                Log.e("MAKITA", "Error fetching logins: ${e.message}")
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -286,11 +312,12 @@ fun UbicacionScreen() {
         if (response.isNotEmpty() || errorState != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Button(
                     onClick = {
                         clearRequested = true
+                        focusRequester.requestFocus()
                     },
                     modifier = Modifier.padding(start = 8.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -300,9 +327,47 @@ fun UbicacionScreen() {
                     Text("Limpiar")
 
                 }
+
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            val result  = loginDao.deleteAllLogins()
+                            Log.d("MAKITA" , "RESULTADO DEL DELETE : ${result}")
+                        }
+                    },
+                    modifier = Modifier.padding(end = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00909E)  // GreenMakita
+                    )
+                ) {
+                    Text("Terminar Proceso")
+
+                }
+
+
             }
         }
 
-
+        Spacer(modifier = Modifier.height(16.dp))
+        if (logins.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Divider(
+                color = Color.Gray,
+                thickness = 1.dp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            Text("Registros de Inicio de Sesión", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            logins.forEach { login ->
+                Text("Usuario: ${login.username}/ Password: ${login.password} / Fecha: ${formatTimestamp(login.loginTime)}")
+            }
+        }
     }
+}
+
+
+fun formatTimestamp(timestamp: Long): String {
+    val date = Date(timestamp)
+    val formatter = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+    formatter.timeZone = TimeZone.getTimeZone("GMT-4") // Establece la zona horaria de Santiago de Chile
+    return formatter.format(date)
 }

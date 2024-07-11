@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    id("kotlin-kapt") // Asegúrate de incluir el plugin kotlin-kapt aquí
+    kotlin("kapt")
 }
 
 android {
@@ -13,7 +13,7 @@ android {
         minSdk = 24
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -51,6 +51,17 @@ android {
 }
 
 dependencies {
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion") {
+        exclude(group = "com.intellij", module = "annotations")
+    }
+    implementation("androidx.room:room-ktx:$roomVersion") {
+        exclude(group = "com.intellij", module = "annotations")
+    }
+    kapt("androidx.room:room-compiler:$roomVersion") {
+        exclude(group = "com.intellij", module = "annotations")
+    }
+
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -65,13 +76,6 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation(libs.androidx.navigation.compose)
 
-    // Room Database
-    implementation("androidx.room:room-runtime:2.4.0")
-    kapt("androidx.room:room-compiler:2.4.0") // Corregido a kapt aquí
-
-    // SQLite
-    implementation("androidx.sqlite:sqlite:2.1.0")
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -81,3 +85,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
 }
+

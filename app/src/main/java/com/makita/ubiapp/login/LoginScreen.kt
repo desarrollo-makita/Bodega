@@ -27,20 +27,24 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.R
+import com.makita.ubiapp.database.AppDatabase
+import com.makita.ubiapp.entity.LoginEntity
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit
-) {
-    var username by remember { mutableStateOf(TextFieldValue()) }
+fun LoginScreen(onLoginSuccess: (String, String) -> Unit) {
+var username by remember { mutableStateOf(TextFieldValue()) }
     var password by remember { mutableStateOf(TextFieldValue()) }
     var errorState by remember { mutableStateOf<String?>(null) }
     var isUsernameFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val appVersion = getAppVersion(context)
+    val db = AppDatabase.getDatabase(context)
+    val loginDao = db.loginDao()
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -48,7 +52,6 @@ fun LoginScreen(
             .padding(16.dp)
             .background(Color.White, shape = RoundedCornerShape(10.dp)),
         verticalArrangement = Arrangement.SpaceEvenly,
-
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
@@ -62,8 +65,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label =
-            {
+            label = {
                 Text(
                     text = "Usuario",
                     style = TextStyle(
@@ -73,7 +75,7 @@ fun LoginScreen(
                 )
             },
             modifier = Modifier
-                .width(350.dp)  // Establece un ancho específico para el botón
+                .width(350.dp)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .onFocusChanged {
                     isUsernameFocused = it.isFocused
@@ -86,28 +88,24 @@ fun LoginScreen(
                 unfocusedBorderColor = Color.Gray,
                 focusedLabelColor = GreenMakita,
                 cursorColor = GreenMakita,
-
-                )
-
+            )
         )
 
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label =
-            {
+            label = {
                 Text(
                     text = "Password",
                     style = TextStyle(
                         fontSize = 18.sp,
                         fontWeight = if (isPasswordFocused) FontWeight.Bold else FontWeight.Normal,
-
-                        )
+                    )
                 )
             },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier
-                .width(350.dp)  // Establece un ancho específico para el botón
+                .width(350.dp)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .onFocusChanged {
                     isPasswordFocused = it.isFocused
@@ -120,8 +118,7 @@ fun LoginScreen(
                 unfocusedBorderColor = Color.Gray,
                 focusedLabelColor = GreenMakita,
                 cursorColor = GreenMakita,
-                )
-
+            )
         )
 
         errorState?.let { error ->
@@ -138,8 +135,8 @@ fun LoginScreen(
 
         LaunchedEffect(errorState) {
             if (errorState != null) {
-                delay(2000) // Esperar 2 segundos
-                errorState = null // Limpiar el estado de error
+                delay(2000)
+                errorState = null
             }
         }
 
@@ -147,23 +144,26 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                // Implementación de la lógica de validación
-                val isValid = validateLogin(username.text, password.text)
-                if (isValid) {
-                    // Mostrar log de éxito
-                    println("*MAKITA* Login exitoso para usuario: $username")
-                    onLoginSuccess()
-                } else {
-                    // Mostrar log de error
-                    println("*MAKITA* Error de login para usuario: $username")
-                    errorState = "Usuario y/o Password incorrectos."
-                    username = TextFieldValue()
-                    password = TextFieldValue()
+                coroutineScope.launch {
+                    val isValid = validateLogin(username.text, password.text)
+                    if (isValid) {
+                        val loginEntity = LoginEntity(
+                            username = username.text,
+                            password = password.text,
+                            loginTime = System.currentTimeMillis()
+                        )
+                        loginDao.insertLogin(loginEntity)
+                        onLoginSuccess(username.text, password.text)
+                    } else {
+                        errorState = "Usuario y/o Password incorrectos."
+                        username = TextFieldValue()
+                        password = TextFieldValue()
+                    }
                 }
             },
             modifier = Modifier
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .width(150.dp)  // Establece un ancho específico para el botón
+                .width(150.dp)
                 .height(48.dp),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
@@ -172,10 +172,10 @@ fun LoginScreen(
         ) {
             Text("Ingresar")
         }
+        Spacer(modifier = Modifier.height(16.dp))
 
         Spacer(modifier = Modifier.height(100.dp))
         Text(
-
             text = "Versión $appVersion",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(8.dp)
@@ -185,9 +185,6 @@ fun LoginScreen(
 
 // Función para validar el login (simulada)
 private fun validateLogin(username: String, password: String): Boolean {
-    // Implementación de la lógica de validación
-    println("*MAKITA* request username : $username")
-    println("*MAKITA* request password : $password")
     return username == "admin" && password == "admin123"
 }
 
@@ -199,3 +196,7 @@ fun getAppVersion(context: Context): String {
         "N/A"
     }
 }
+
+
+
+
