@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
@@ -29,7 +30,7 @@ import com.makita.ubiapp.ActualizaUbicacionRequest
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.UbicacionResponse
 import com.makita.ubiapp.database.AppDatabase
-import com.makita.ubiapp.entity.LoginEntity
+import com.makita.ubiapp.entity.RegistraUbicacionEntity
 
 
 import com.makita.ubiapp.ui.theme.GreenMakita
@@ -43,12 +44,17 @@ import java.util.Locale
 import java.util.TimeZone
 
 
+import android.content.Context
+import java.io.File
+import java.io.FileWriter
+
+
+
 @Composable
-fun UbicacionScreen() {
+fun UbicacionScreen(username: String) {
 
     val apiService = RetrofitClient.apiService
     var text by remember { mutableStateOf(TextFieldValue()) }
-    var textBD by remember { mutableStateOf(TextFieldValue()) }
     var response by remember { mutableStateOf<List<UbicacionResponse>>(emptyList()) }
     var clearRequested by remember { mutableStateOf(false) }
     var nuevaUbicacion by remember { mutableStateOf(TextFieldValue()) }
@@ -56,19 +62,21 @@ fun UbicacionScreen() {
     var successMessage by remember { mutableStateOf<String?>(null) }
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
-    var logins by remember { mutableStateOf<List<LoginEntity>>(emptyList()) }
+    var datos by remember { mutableStateOf<List<RegistraUbicacionEntity>>(emptyList()) }
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
-    val loginDao = db.loginDao()
+    val registrarUbicacionDao = db.registrarUbicacion()
+    var showDialog by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
-                logins = loginDao.getAllLogins()
-                Log.d("MAKITA", "SQLITE getAllLogins: ${logins}")
+
+                datos = registrarUbicacionDao.getAllData()
+                Log.d("*MAKITA*", "la dataa de SQLite que se encuentra en la tabla : ${datos}")
             } catch (e: Exception) {
-                Log.e("MAKITA", "Error fetching logins: ${e.message}")
+                Log.e("*MAKITA*", "Error fetching logins: ${e.message}")
             }
         }
     }
@@ -78,11 +86,10 @@ fun UbicacionScreen() {
     }
 
 
-        LaunchedEffect(text) {
+    LaunchedEffect(text) {
         if (text.text.isNotEmpty()) {
             println("*MAKITA* Texto ingresado: ${text.text}")
             try {
-
                 val ubicaciones = apiService.obtenerUbicacion(text.text)
                 response = ubicaciones
 
@@ -285,6 +292,22 @@ fun UbicacionScreen() {
                                             tipoItem = response.firstOrNull()?.tipoItem ?: "" // Obtener tipoItem de la primera respuesta
                                         )
                                         apiService.actualizaUbicacion(request)
+
+                                        val requestRegistro = RegistraUbicacionEntity (
+                                            username = username,
+                                            timestamp =  formatTimestamp(System.currentTimeMillis()),
+                                            item = ubicacion.item,
+                                            ubicacionAntigua = ubicacion.Ubicacion,
+                                            nuevaUbicacion =  nuevaUbicacion.text,
+                                            tipoItem = response.firstOrNull()?.tipoItem ?: "" // Obtener tipoItem de la primera respuesta
+                                        )
+
+                                        Log.d("*MAKITA*" , "requestTRegistro : $requestRegistro " )
+
+                                        var responseRegistroUbi = registrarUbicacionDao.registraUbicacion(requestRegistro)
+                                        Log.d("*MAKITA*" , "Respuesta de ingreso de informacion $responseRegistroUbi")
+
+
                                         successMessage = "Ubicación actualizada exitosamente"
                                         nuevaUbicacion = TextFieldValue("") // Limpiar el campo de nueva ubicación
                                         response = apiService.obtenerUbicacion(text.text) // Actualizar la respuesta después de guardar
@@ -295,11 +318,13 @@ fun UbicacionScreen() {
                                     }
                                 }
                             }
+
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = GreenMakita,
                             contentColor = Color.White
                         ),
+                        enabled = nuevaUbicacion.text.isNotEmpty()
 
                     ) {
                         Text(text = "Grabar")
@@ -331,8 +356,8 @@ fun UbicacionScreen() {
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            val result  = loginDao.deleteAllLogins()
-                            Log.d("MAKITA" , "RESULTADO DEL DELETE : ${result}")
+                            showDialog = true
+
                         }
                     },
                     modifier = Modifier.padding(end = 8.dp),
@@ -347,9 +372,11 @@ fun UbicacionScreen() {
 
             }
         }
+        
+        
 
         Spacer(modifier = Modifier.height(16.dp))
-        if (logins.isNotEmpty()) {
+        if (datos.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             Divider(
                 color = Color.Gray,
@@ -357,11 +384,42 @@ fun UbicacionScreen() {
                 modifier = Modifier.padding(vertical = 8.dp)
             )
             Text("Registros de Inicio de Sesión", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            logins.forEach { login ->
-                Text("Usuario: ${login.username}/ Password: ${login.password} / Fecha: ${formatTimestamp(login.loginTime)}")
+            datos.forEach { data ->
+                Text("Usuario: ${data.username}/ Item: ${data.item} / Fecha: ${data.timestamp} / Tipo Item: ${data.tipoItem} / Ubicacion Antigua: ${data.ubicacionAntigua}" +
+                        "/ Nueva Ubicacion: ${data.nuevaUbicacion}")
             }
         }
     }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Confirmación de Borrado") },
+            text = { Text("¿Estás seguro de borrar la información y cerrar el proceso?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        coroutineScope.launch {
+                            val result = registrarUbicacionDao.deleteAllData()
+                            Log.d("MAKITA", "RESULTADO DEL DELETE : $result")
+                            showDialog = false  // Cerrar el modal después de borrar
+                        }
+                    }
+                ) {
+                    Text("Sí")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showDialog = false }
+                ) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
+
 }
 
 
@@ -371,3 +429,7 @@ fun formatTimestamp(timestamp: Long): String {
     formatter.timeZone = TimeZone.getTimeZone("GMT-4") // Establece la zona horaria de Santiago de Chile
     return formatter.format(date)
 }
+
+
+
+

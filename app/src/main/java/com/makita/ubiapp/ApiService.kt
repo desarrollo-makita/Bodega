@@ -21,6 +21,13 @@ data class ActualizaUbicacionRequest(
     val tipoItem: String
 )
 
+data class RegistroUbicacionRequest(
+    val nuevaUbicacion: String,
+    val empresa: String,
+    val item: String,
+    val tipoItem: String
+)
+
 interface ApiService {
 
     @GET("api/obtener-ubicacion/{ubicacion}")

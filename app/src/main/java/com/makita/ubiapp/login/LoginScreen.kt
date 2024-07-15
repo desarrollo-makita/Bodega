@@ -2,6 +2,7 @@ package com.makita.ubiapp.login
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.R
 import com.makita.ubiapp.database.AppDatabase
 import com.makita.ubiapp.entity.LoginEntity
+import com.makita.ubiapp.ubicaciones.formatTimestamp
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -145,20 +147,30 @@ var username by remember { mutableStateOf(TextFieldValue()) }
         Button(
             onClick = {
                 coroutineScope.launch {
-                    val isValid = validateLogin(username.text, password.text)
-                    if (isValid) {
-                        val loginEntity = LoginEntity(
-                            username = username.text,
-                            password = password.text,
-                            loginTime = System.currentTimeMillis()
-                        )
-                        loginDao.insertLogin(loginEntity)
-                        onLoginSuccess(username.text, password.text)
-                    } else {
-                        errorState = "Usuario y/o Password incorrectos."
-                        username = TextFieldValue()
-                        password = TextFieldValue()
-                    }
+                   try {
+
+                       val isValid = validateLogin(username.text, password.text)
+                       if (isValid) {
+                           val loginEntity = LoginEntity(
+                               username = username.text,
+                               password = password.text,
+                               loginTime = formatTimestamp(System.currentTimeMillis())
+                           )
+
+                           Log.d("*MAKITA*" , "loginEntity $loginEntity")
+                           loginDao.insertLogin(loginEntity)
+                           onLoginSuccess(username.text, password.text)
+                       } else {
+                           errorState = "Usuario y/o Password incorrectos."
+                           username = TextFieldValue()
+                           password = TextFieldValue()
+                       }
+
+                   }catch (e: Exception) {
+                       Log.e("*MAKITA*", "Error fetching logins: ${e.message}")
+
+                   }
+
                 }
             },
             modifier = Modifier

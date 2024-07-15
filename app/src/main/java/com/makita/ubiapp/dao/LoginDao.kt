@@ -4,7 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.makita.ubiapp.entity.LoginEntity
-import kotlinx.coroutines.flow.Flow
+import com.makita.ubiapp.entity.RegistraUbicacionEntity
+
 
 
 @Dao
@@ -17,6 +18,8 @@ interface LoginDao {
 
     @Query("DELETE FROM login_table")
     suspend fun deleteAllLogins():Unit
+
+
 
 
 }

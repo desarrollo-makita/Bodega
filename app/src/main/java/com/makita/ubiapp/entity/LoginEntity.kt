@@ -10,5 +10,6 @@ data class LoginEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val username: String,
     val password: String,
-    val loginTime: Long
+    val loginTime: String,
+
 )
