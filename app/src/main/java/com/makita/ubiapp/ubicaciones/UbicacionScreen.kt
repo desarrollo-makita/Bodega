@@ -1,5 +1,6 @@
 package com.makita.ubiapp.ubicaciones
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -43,10 +44,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
+import com.makita.ubiapp.archivo.guardarDatosEnExcel
 
-import android.content.Context
-import java.io.File
-import java.io.FileWriter
 
 
 
@@ -305,7 +304,7 @@ fun UbicacionScreen(username: String) {
                                         Log.d("*MAKITA*" , "requestTRegistro : $requestRegistro " )
 
                                         var responseRegistroUbi = registrarUbicacionDao.registraUbicacion(requestRegistro)
-                                        Log.d("*MAKITA*" , "Respuesta de ingreso de informacion $responseRegistroUbi")
+                                        Log.d("*MAKITA*" , "Se registran datos en sqlite")
 
 
                                         successMessage = "Ubicación actualizada exitosamente"
@@ -357,7 +356,6 @@ fun UbicacionScreen(username: String) {
                     onClick = {
                         coroutineScope.launch {
                             showDialog = true
-
                         }
                     },
                     modifier = Modifier.padding(end = 8.dp),
@@ -376,7 +374,7 @@ fun UbicacionScreen(username: String) {
         
 
         Spacer(modifier = Modifier.height(16.dp))
-        if (datos.isNotEmpty()) {
+        /*if (datos.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             Divider(
                 color = Color.Gray,
@@ -388,7 +386,7 @@ fun UbicacionScreen(username: String) {
                 Text("Usuario: ${data.username}/ Item: ${data.item} / Fecha: ${data.timestamp} / Tipo Item: ${data.tipoItem} / Ubicacion Antigua: ${data.ubicacionAntigua}" +
                         "/ Nueva Ubicacion: ${data.nuevaUbicacion}")
             }
-        }
+        }*/
     }
 
     if (showDialog) {
@@ -400,9 +398,26 @@ fun UbicacionScreen(username: String) {
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            val result = registrarUbicacionDao.deleteAllData()
-                            Log.d("MAKITA", "RESULTADO DEL DELETE : $result")
-                            showDialog = false  // Cerrar el modal después de borrar
+                            val registros = registrarUbicacionDao.getAllData()
+                            val fileUri = guardarDatosEnExcel(context, registros)
+                            if (fileUri != null) {
+                                val emailIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                    putExtra(Intent.EXTRA_EMAIL, arrayOf("j herrera@makita.cl")) // Reemplaza con el correo del destinatario
+                                    putExtra(Intent.EXTRA_SUBJECT, "Registros de Ubicación")
+                                    putExtra(Intent.EXTRA_TEXT, "Adjunto encontrarás los registros de ubicación.")
+                                    putExtra(Intent.EXTRA_STREAM, fileUri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(emailIntent, "Enviar correo..."))
+
+                                registrarUbicacionDao.deleteAllData()
+                                Log.d("*MAKITA*", "Datos borrados y enviados por correo.")
+                                showDialog = false  // Cerrar el modal después de enviar y borrar
+                            } else {
+                                Log.e("*MAKITA*", "Error al crear el archivo para el correo.")
+                                showDialog = false
+                            }
                         }
                     }
                 ) {
@@ -410,9 +425,7 @@ fun UbicacionScreen(username: String) {
                 }
             },
             dismissButton = {
-                Button(
-                    onClick = { showDialog = false }
-                ) {
+                Button(onClick = { showDialog = false }) {
                     Text("No")
                 }
             }
