@@ -81,7 +81,6 @@ fun UbicacionScreen(username: String) {
 
                 registrarUbicacionDao.deleteAllData()
                 Log.d("*MAKITA*", "Datos borrados y enviados por correo.")
-                Log.d("*MAKITA*", "Email enviado exitosamente.")
                 successMail = "Datos enviados por correo exitosamente."
 
             }

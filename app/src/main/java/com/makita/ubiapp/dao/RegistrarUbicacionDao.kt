@@ -3,8 +3,7 @@ package com.makita.ubiapp.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.makita.ubiapp.RegistroUbicacionRequest
-import com.makita.ubiapp.entity.LoginEntity
+
 import com.makita.ubiapp.entity.RegistraUbicacionEntity
 
 

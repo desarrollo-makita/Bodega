@@ -1,5 +1,6 @@
 package com.makita.ubiapp
 
+import MenuScreen
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -13,19 +14,21 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.makita.ubiapp.login.LoginScreen
-import com.makita.ubiapp.ui.theme.UbiAppTheme
 import com.makita.ubiapp.ubicaciones.UbicacionScreen
+
+import com.makita.ubiapp.ui.theme.UbiAppTheme
+
 
 
 class MainActivity : ComponentActivity() {
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             UbiAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Log.d("*MAKITA*", "01 ")
+                    Log.d("*MAKITA*", "Iniciamos MainActivity")
                     val navController = rememberNavController()
                     SetupNavGraph(navController = navController)
                 }
@@ -41,17 +44,23 @@ class MainActivity : ComponentActivity() {
         ) {
             composable("login") {
                 LoginScreen(
-                    onLoginSuccess = { username, password ->
-                        Log.d("*MAKITA*", "SQLITE 02 : ${username}")
-                        navController.navigate("ubicacion/$username")
+                    onLoginSuccess = { username, area ->
+                        Log.d("*MAKITA*", "SQLITE 02 : ${username} ,  ${area}")
+                        navController.navigate("menu/$username/$area")
                     }
                 )
             }
+            composable("menu/{username}/{area}") { backStackEntry ->
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                val area = backStackEntry.arguments?.getString("area") ?: ""
+                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area")
+                MenuScreen(nombreUsuario = username, area = area, navController = navController)
+            }
             composable("ubicacion/{username}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
-                Log.d("*MAKITA*", "backStackEntry 03 : $username")
-                UbicacionScreen(username)
+                UbicacionScreen(username = username)
             }
+
         }
     }
 

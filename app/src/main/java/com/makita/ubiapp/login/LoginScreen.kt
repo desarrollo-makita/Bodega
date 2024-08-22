@@ -27,7 +27,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.makita.ubiapp.LoginRequest
 import com.makita.ubiapp.R
+import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.database.AppDatabase
 import com.makita.ubiapp.entity.LoginEntity
 import com.makita.ubiapp.ubicaciones.formatTimestamp
@@ -37,15 +39,22 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(onLoginSuccess: (String, String) -> Unit) {
-var username by remember { mutableStateOf(TextFieldValue()) }
-    var password by remember { mutableStateOf(TextFieldValue()) }
+    // Variables para almacenar el estado de los campos de texto
+    var nombreUsuario by remember { mutableStateOf(TextFieldValue()) }
+    var clave by remember { mutableStateOf(TextFieldValue()) }
     var errorState by remember { mutableStateOf<String?>(null) }
     var isUsernameFocused by remember { mutableStateOf(false) }
     var isPasswordFocused by remember { mutableStateOf(false) }
+
+    // Obtener el contexto y la versión de la aplicación
     val context = LocalContext.current
     val appVersion = getAppVersion(context)
+
+    // Inicializar la base de datos y el DAO
     val db = AppDatabase.getDatabase(context)
     val loginDao = db.loginDao()
+
+    // Inicializar el Scope de Coroutine
     val coroutineScope = rememberCoroutineScope()
 
     Column(
@@ -63,10 +72,10 @@ var username by remember { mutableStateOf(TextFieldValue()) }
                 .size(150.dp)
                 .padding(top = 24.dp)
         )
-
+        // Campo de texto para el nombre de usuario
         OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
+            value = nombreUsuario,
+            onValueChange = { nombreUsuario = it },
             label = {
                 Text(
                     text = "Usuario",
@@ -92,10 +101,10 @@ var username by remember { mutableStateOf(TextFieldValue()) }
                 cursorColor = GreenMakita,
             )
         )
-
+        // Campo de texto para la contraseña
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
+            value = clave,
+            onValueChange = { clave = it },
             label = {
                 Text(
                     text = "Password",
@@ -123,6 +132,7 @@ var username by remember { mutableStateOf(TextFieldValue()) }
             )
         )
 
+        // Mostrar mensaje de error si hay uno
         errorState?.let { error ->
             Text(
                 text = error,
@@ -142,31 +152,56 @@ var username by remember { mutableStateOf(TextFieldValue()) }
             }
         }
 
+        // Espacio entre los elementos
         Spacer(modifier = Modifier.height(25.dp))
 
+        // Botón de ingreso
         Button(
             onClick = {
                 coroutineScope.launch {
                    try {
 
-                       val isValid = validateLogin(username.text, password.text)
-                       if (isValid) {
-                           val loginEntity = LoginEntity(
-                               username = username.text,
-                               password = password.text,
-                               loginTime = formatTimestamp(System.currentTimeMillis())
-                           )
+                       val request = LoginRequest(nombreUsuario.text, clave.text)
 
-                           Log.d("*MAKITA*" , "loginEntity $loginEntity")
-                           loginDao.insertLogin(loginEntity)
-                           onLoginSuccess(username.text, password.text)
+                       // Llamar al endpoint de login usando Retrofit
+                       val response = RetrofitClient.apiService.login(request)
+                       Log.d("*MAKITA*", "RESPONSE $response $nombreUsuario.text ")
+                       if (response.isSuccessful) {
+                           response.body()?.let { loginResponse ->
+                               // Verifica si el campo `data` no es nulo
+                               val userData = loginResponse.data
+                               Log.d("*MAKITA*", "userData $userData")
+                               if (userData != null) {
+                                   // Guardar el login en la base de datos local
+                                   val loginEntity = LoginEntity(
+                                       username = nombreUsuario.text,
+                                       password = clave.text,
+                                       loginTime = formatTimestamp(System.currentTimeMillis())
+                                   )
+
+                                   Log.d("*MAKITA*", "loginEntity $loginEntity")
+                                   loginDao.insertLogin(loginEntity)
+
+                                   // Informar al éxito del login
+                                   onLoginSuccess(userData.NombreUsuario, userData.Area)
+                               } else {
+                                   // Manejar el caso donde `data` es null
+                                   errorState = "Datos de usuario vacíos"
+                                   Log.e("*MAKITA*", "El campo 'data' en la respuesta es nulo")
+                               }
+                           } ?: run {
+                               // Manejar caso donde la respuesta es nula
+                               errorState = "Respuesta vacía del servidor"
+                               Log.e("*MAKITA*", "Respuesta vacía del servidor")
+                           }
                        } else {
-                           errorState = "Usuario y/o Password incorrectos."
-                           username = TextFieldValue()
-                           password = TextFieldValue()
+                           // Manejar errores en la autenticación
+                               errorState = "Nombre de usuario o contraseña incorrectos. Por favor, inténtalo de nuevo."
                        }
 
                    }catch (e: Exception) {
+                       // Manejar errores de conexión
+                       errorState = "Error de conexión: ${e.message}"
                        Log.e("*MAKITA*", "Error fetching logins: ${e.message}")
 
                    }
@@ -195,10 +230,6 @@ var username by remember { mutableStateOf(TextFieldValue()) }
     }
 }
 
-// Función para validar el login (simulada)
-private fun validateLogin(username: String, password: String): Boolean {
-    return username == "admin" && password == "admin123"
-}
 
 fun getAppVersion(context: Context): String {
     return try {
@@ -208,6 +239,7 @@ fun getAppVersion(context: Context): String {
         "N/A"
     }
 }
+
 
 
 
