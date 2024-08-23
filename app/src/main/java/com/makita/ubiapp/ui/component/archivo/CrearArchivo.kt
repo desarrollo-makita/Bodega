@@ -1,11 +1,11 @@
-package com.makita.ubiapp.archivo
+package com.makita.ubiapp.ui.component.archivo
 
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
-import com.makita.ubiapp.entity.RegistraUbicacionEntity
+import com.makita.ubiapp.ui.component.entity.RegistraUbicacionEntity
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File

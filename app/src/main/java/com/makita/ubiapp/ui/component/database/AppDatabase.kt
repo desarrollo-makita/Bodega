@@ -1,13 +1,13 @@
-package com.makita.ubiapp.database
+package com.makita.ubiapp.ui.component.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.makita.ubiapp.dao.LoginDao
-import com.makita.ubiapp.dao.RegistrarUbicacionDao
-import com.makita.ubiapp.entity.LoginEntity
-import com.makita.ubiapp.entity.RegistraUbicacionEntity
+import com.makita.ubiapp.ui.component.dao.LoginDao
+import com.makita.ubiapp.ui.component.dao.RegistrarUbicacionDao
+import com.makita.ubiapp.ui.component.entity.LoginEntity
+import com.makita.ubiapp.ui.component.entity.RegistraUbicacionEntity
 
 @Database(entities = [LoginEntity::class , RegistraUbicacionEntity ::class], version = 3)
 abstract class AppDatabase : RoomDatabase() {

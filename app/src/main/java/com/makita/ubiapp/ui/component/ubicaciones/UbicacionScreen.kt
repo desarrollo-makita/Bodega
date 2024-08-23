@@ -1,5 +1,6 @@
-package com.makita.ubiapp.ubicaciones
+package com.makita.ubiapp.ui.component.ubicaciones
 
+import android.app.Activity
 import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,8 +32,8 @@ import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.ActualizaUbicacionRequest
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.UbicacionResponse
-import com.makita.ubiapp.database.AppDatabase
-import com.makita.ubiapp.entity.RegistraUbicacionEntity
+import com.makita.ubiapp.ui.component.database.AppDatabase
+import com.makita.ubiapp.ui.component.entity.RegistraUbicacionEntity
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,8 +43,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import com.makita.ubiapp.archivo.guardarDatosEnExcel
-import kotlin.math.log
+import com.makita.ubiapp.ui.component.archivo.guardarDatosEnExcel
 
 
 @Composable
@@ -77,7 +77,7 @@ fun UbicacionScreen(username: String) {
     ) { result ->
         Log.d("*MAKITA*","Resul envio Correo : $result")
         coroutineScope.launch {
-            if (result.resultCode == android.app.Activity.RESULT_CANCELED) {
+            if (result.resultCode == Activity.RESULT_CANCELED) {
 
                 registrarUbicacionDao.deleteAllData()
                 Log.d("*MAKITA*", "Datos borrados y enviados por correo.")

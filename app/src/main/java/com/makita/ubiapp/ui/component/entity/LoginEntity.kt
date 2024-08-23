@@ -1,4 +1,4 @@
-package com.makita.ubiapp.entity
+package com.makita.ubiapp.ui.component.entity
 
 
 import androidx.room.Entity

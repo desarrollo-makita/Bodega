@@ -13,8 +13,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.makita.ubiapp.login.LoginScreen
-import com.makita.ubiapp.ubicaciones.UbicacionScreen
+import com.makita.ubiapp.ui.component.login.LoginScreen
+import com.makita.ubiapp.ui.component.ubicaciones.UbicacionScreen
 
 import com.makita.ubiapp.ui.theme.UbiAppTheme
 

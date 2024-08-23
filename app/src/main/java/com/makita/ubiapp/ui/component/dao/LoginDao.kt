@@ -1,10 +1,10 @@
-package com.makita.ubiapp.dao
+package com.makita.ubiapp.ui.component.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.makita.ubiapp.entity.LoginEntity
-import com.makita.ubiapp.entity.RegistraUbicacionEntity
+import com.makita.ubiapp.ui.component.entity.LoginEntity
+import com.makita.ubiapp.ui.component.entity.RegistraUbicacionEntity
 
 
 
