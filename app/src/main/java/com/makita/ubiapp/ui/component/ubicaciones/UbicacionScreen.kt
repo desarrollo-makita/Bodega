@@ -183,7 +183,7 @@ fun UbicacionScreen(username: String) {
                         .clickable {
                             clearRequested = true
                             focusRequester.requestFocus() },
-                    tint = Color.Gray
+                    tint = GreenMakita
                 )
             },
         )
