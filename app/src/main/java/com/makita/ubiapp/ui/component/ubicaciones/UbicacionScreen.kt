@@ -16,6 +16,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -45,32 +47,35 @@ import java.util.Locale
 import java.util.TimeZone
 import com.makita.ubiapp.ui.component.archivo.guardarDatosEnExcel
 
-
+val TextFieldValueSaver: Saver<TextFieldValue, String> = Saver(
+    save = { it.text }, // Guarda solo el texto
+    restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
+)
 @Composable
 fun UbicacionScreen(username: String) {
 
     val apiService = RetrofitClient.apiService
-    var text by remember { mutableStateOf(TextFieldValue()) }
-    var response by remember { mutableStateOf<List<UbicacionResponse>>(emptyList()) }
-    var clearRequested by remember { mutableStateOf(false) }
-    var nuevaUbicacion by remember { mutableStateOf(TextFieldValue()) }
-    var errorState by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
-    var successMail by remember { mutableStateOf<String?>(null) }
-    var registrosMessage by remember { mutableStateOf<String?>(null) }
+    var text by rememberSaveable(stateSaver = TextFieldValueSaver) { mutableStateOf(TextFieldValue()) }
+    var nuevaUbicacion by rememberSaveable(stateSaver = TextFieldValueSaver) { mutableStateOf(TextFieldValue()) }
+    var response by rememberSaveable { mutableStateOf<List<UbicacionResponse>>(emptyList()) }
+    var clearRequested by rememberSaveable { mutableStateOf(false) }
+    var errorState by rememberSaveable { mutableStateOf<String?>(null) }
+    var successMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var successMail by rememberSaveable { mutableStateOf<String?>(null) }
+    var registrosMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var datos by rememberSaveable { mutableStateOf<List<RegistraUbicacionEntity>>(emptyList()) }
+    var showDialog by rememberSaveable { mutableStateOf(false) }
+    var isTextFieldEnabled by rememberSaveable { mutableStateOf(true) }
+    var showTerminateButton by rememberSaveable { mutableStateOf(false) }
+    var showLimpiarButton by rememberSaveable { mutableStateOf(false) }
+    var showContinuarProcesoButton by rememberSaveable { mutableStateOf(false) }
+    var count by rememberSaveable { mutableStateOf(0) }
+
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
-    var datos by remember { mutableStateOf<List<RegistraUbicacionEntity>>(emptyList()) }
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
     val registrarUbicacionDao = db.registrarUbicacion()
-    var showDialog by remember { mutableStateOf(false) }
-    var isTextFieldEnabled by remember { mutableStateOf(true) }
-    var showTerminateButton by remember { mutableStateOf(false) }
-    var showLimpiarButton by remember { mutableStateOf(false) }
-    var showContinuarProcesoButton by remember { mutableStateOf(false) }
-    var count by remember { mutableStateOf(0) }
-
 
     val emailLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
