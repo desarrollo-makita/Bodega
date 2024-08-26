@@ -80,13 +80,11 @@ dependencies {
     // Dependencias para ViewModel y LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
-
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
 
     // Dependencias de Apache POI
     implementation("org.apache.poi:poi:5.2.3")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
-
-
 
 
     testImplementation(libs.junit)

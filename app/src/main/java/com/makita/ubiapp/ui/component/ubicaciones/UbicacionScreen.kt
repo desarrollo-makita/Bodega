@@ -5,13 +5,19 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -67,7 +73,7 @@ fun UbicacionScreen(username: String) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
     var isTextFieldEnabled by rememberSaveable { mutableStateOf(true) }
     var showTerminateButton by rememberSaveable { mutableStateOf(false) }
-    var showLimpiarButton by rememberSaveable { mutableStateOf(false) }
+    var showLimpiarButton by rememberSaveable { mutableStateOf(true) }
     var showContinuarProcesoButton by rememberSaveable { mutableStateOf(false) }
     var count by rememberSaveable { mutableStateOf(0) }
 
@@ -167,7 +173,19 @@ fun UbicacionScreen(username: String) {
                 unfocusedBorderColor = Color.Gray,
                 focusedLabelColor = GreenMakita,
                 cursorColor = GreenMakita,
-            )
+            ),
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "Clear text",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            clearRequested = true
+                            focusRequester.requestFocus() },
+                    tint = Color.Gray
+                )
+            },
         )
 
         // Mostrar mensaje de registros
@@ -390,7 +408,7 @@ fun UbicacionScreen(username: String) {
             errorState = null
             successMessage = null
             showTerminateButton= false
-            showLimpiarButton = false
+            showLimpiarButton = true
             showContinuarProcesoButton= false
             registrosMessage = null
         }
