@@ -143,6 +143,7 @@ fun UbicacionScreen(username: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState()) // Agregar scroll aquí
             .padding(16.dp)
     ) {
         Spacer(modifier = Modifier.height(16.dp))
@@ -158,7 +159,6 @@ fun UbicacionScreen(username: String) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
-                .verticalScroll(rememberScrollState())
                 .focusRequester(focusRequester),
             label = { Text("Escanear Item") },
             enabled = isTextFieldEnabled,
