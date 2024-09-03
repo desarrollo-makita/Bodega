@@ -43,13 +43,14 @@ fun PasswordRecoveryDialog(onDismiss: () -> Unit) {
                         Log.d("*MAKITA*", "Correo de recuperación enviado a: ${email.text}")
                         onDismiss()
                     }
-                }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))
             ) {
                 Text("Enviar")
             }
         },
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
+            Button(onClick = { onDismiss() } ,    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))) {
                 Text("Cancelar")
             }
         }

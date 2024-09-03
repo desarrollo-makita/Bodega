@@ -10,14 +10,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
+
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -62,7 +62,11 @@ fun UbicacionScreen(username: String) {
 
     val apiService = RetrofitClient.apiService
     var text by rememberSaveable(stateSaver = TextFieldValueSaver) { mutableStateOf(TextFieldValue()) }
-    var nuevaUbicacion by rememberSaveable(stateSaver = TextFieldValueSaver) { mutableStateOf(TextFieldValue()) }
+    var nuevaUbicacion by rememberSaveable(stateSaver = TextFieldValueSaver) {
+        mutableStateOf(
+            TextFieldValue()
+        )
+    }
     var response by rememberSaveable { mutableStateOf<List<UbicacionResponse>>(emptyList()) }
     var clearRequested by rememberSaveable { mutableStateOf(false) }
     var errorState by rememberSaveable { mutableStateOf<String?>(null) }
@@ -75,7 +79,7 @@ fun UbicacionScreen(username: String) {
     var showTerminateButton by rememberSaveable { mutableStateOf(false) }
     var showLimpiarButton by rememberSaveable { mutableStateOf(true) }
     var showContinuarProcesoButton by rememberSaveable { mutableStateOf(false) }
-    var count by rememberSaveable { mutableStateOf(0) }
+    var count by rememberSaveable { mutableIntStateOf(0) }
 
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
@@ -86,7 +90,7 @@ fun UbicacionScreen(username: String) {
     val emailLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        Log.d("*MAKITA*","Resul envio Correo : $result")
+        Log.d("*MAKITA*", "Resul envio Correo : $result")
         coroutineScope.launch {
             if (result.resultCode == Activity.RESULT_CANCELED) {
 
@@ -94,8 +98,7 @@ fun UbicacionScreen(username: String) {
                 Log.d("*MAKITA*", "Datos borrados y enviados por correo.")
                 successMail = "Datos enviados por correo exitosamente."
 
-            }
-            else {
+            } else {
                 Log.e("*MAKITA*", "Error al enviar el correo.")
                 errorState = "Error al enviar el correo."
             }
@@ -182,7 +185,8 @@ fun UbicacionScreen(username: String) {
                         .size(24.dp)
                         .clickable {
                             clearRequested = true
-                            focusRequester.requestFocus() },
+                            focusRequester.requestFocus()
+                        },
                     tint = GreenMakita
                 )
             },
@@ -190,7 +194,7 @@ fun UbicacionScreen(username: String) {
 
         // Mostrar mensaje de registros
         registrosMessage?.let { message ->
-           Text(
+            Text(
                 text = message,
                 color = Color.Red,
                 style = TextStyle(fontWeight = FontWeight.Bold),
@@ -212,14 +216,14 @@ fun UbicacionScreen(username: String) {
                 style = TextStyle(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(vertical = 8.dp),
 
-            )
+                )
         }
 
         successMail?.let { message ->
             LaunchedEffect(Unit) {
                 delay(4000) // Mostrar el mensaje por 2 segundos
                 successMail = null // Limpiar el mensaje después de 2 segundos
-                clearRequested= true
+                clearRequested = true
             }
             Text(
                 text = message,
@@ -260,7 +264,11 @@ fun UbicacionScreen(username: String) {
                                 ubicacion.item = newValue.text
                             },
                             label = { Text("ITEM", fontWeight = FontWeight.Bold) },
-                            textStyle = TextStyle(fontWeight = FontWeight.Bold, color = Color.Red, fontSize = 20.sp),
+                            textStyle = TextStyle(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Red,
+                                fontSize = 20.sp
+                            ),
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(end = 8.dp),
@@ -273,12 +281,17 @@ fun UbicacionScreen(username: String) {
                         )
 
                         OutlinedTextField(
-                            value = TextFieldValue(ubicacion.Ubicacion.takeUnless { it.isEmpty() } ?: "Sin Ubicación"),
+                            value = TextFieldValue(ubicacion.Ubicacion.takeUnless { it.isEmpty() }
+                                ?: "Sin Ubicación"),
                             onValueChange = { newValue ->
                                 ubicacion.Ubicacion = newValue.text
                             },
                             label = { Text("UBICACIÓN", fontWeight = FontWeight.Bold) },
-                            textStyle = TextStyle(fontWeight = FontWeight.Bold, color = Color.Red , fontSize = 20.sp),
+                            textStyle = TextStyle(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Red,
+                                fontSize = 20.sp
+                            ),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = GreenMakita,
@@ -295,7 +308,11 @@ fun UbicacionScreen(username: String) {
                             ubicacion.tipoItem = newValue.text
                         },
                         label = { Text("TIPO ITEM", fontWeight = FontWeight.Bold) },
-                        textStyle = TextStyle(fontWeight = FontWeight.Bold, color = Color.Red , fontSize = 20.sp),
+                        textStyle = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Red,
+                            fontSize = 20.sp
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
@@ -321,7 +338,10 @@ fun UbicacionScreen(username: String) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    )
                     {
                         OutlinedTextField(
                             value = nuevaUbicacion,
@@ -329,7 +349,8 @@ fun UbicacionScreen(username: String) {
                                 nuevaUbicacion = newValue.copy(text = newValue.text.uppercase())
                             },
                             label = { Text("NUEVA UBICACIÓN", fontWeight = FontWeight.Bold) },
-                            textStyle = TextStyle(fontWeight = FontWeight.Bold, color = Color.Red , fontSize = 20.sp
+                            textStyle = TextStyle(
+                                fontWeight = FontWeight.Bold, color = Color.Red, fontSize = 20.sp
                             ),
                             modifier = Modifier
                                 .weight(1f)
@@ -351,33 +372,44 @@ fun UbicacionScreen(username: String) {
                                                 nuevaUbicacion = nuevaUbicacion.text,
                                                 empresa = "Makita",
                                                 item = text.text,
-                                                tipoItem = response.firstOrNull()?.tipoItem ?: "" // Obtener tipoItem de la primera respuesta
+                                                tipoItem = response.firstOrNull()?.tipoItem
+                                                    ?: "" // Obtener tipoItem de la primera respuesta
                                             )
                                             apiService.actualizaUbicacion(request)
 
-                                            val requestRegistro = RegistraUbicacionEntity (
+                                            val requestRegistro = RegistraUbicacionEntity(
                                                 username = username,
-                                                timestamp =  formatTimestamp(System.currentTimeMillis()),
+                                                timestamp = formatTimestamp(System.currentTimeMillis()),
                                                 item = ubicacion.item,
                                                 ubicacionAntigua = ubicacion.Ubicacion,
-                                                nuevaUbicacion =  nuevaUbicacion.text,
-                                                tipoItem = response.firstOrNull()?.tipoItem ?: "" // Obtener tipoItem de la primera respuesta
+                                                nuevaUbicacion = nuevaUbicacion.text,
+                                                tipoItem = response.firstOrNull()?.tipoItem
+                                                    ?: "" // Obtener tipoItem de la primera respuesta
                                             )
 
-                                            Log.d("*MAKITA*" , "requestTRegistro : $requestRegistro " )
+                                            Log.d(
+                                                "*MAKITA*",
+                                                "requestTRegistro : $requestRegistro "
+                                            )
 
-                                            var responseRegistroUbi = registrarUbicacionDao.registraUbicacion(requestRegistro)
-                                            Log.d("*MAKITA*" , "Se registran datos en sqlite")
+                                            val responseRegistroUbi =
+                                                registrarUbicacionDao.registraUbicacion(
+                                                    requestRegistro
+                                                )
+                                            Log.d("*MAKITA*", "Se registran datos en sqlite : $responseRegistroUbi")
 
 
                                             successMessage = "Ubicación actualizada exitosamente"
-                                            nuevaUbicacion = TextFieldValue("") // Limpiar el campo de nueva ubicación
-                                            response = apiService.obtenerUbicacion(text.text) // Actualizar la respuesta después de guardar
+                                            nuevaUbicacion =
+                                                TextFieldValue("") // Limpiar el campo de nueva ubicación
+                                            response =
+                                                apiService.obtenerUbicacion(text.text) // Actualizar la respuesta después de guardar
                                             showTerminateButton = true
                                             showLimpiarButton = true
                                             showContinuarProcesoButton = false
                                         } catch (e: Exception) {
-                                            errorState = "Error al actualizar ubicación: ${e.message}"
+                                            errorState =
+                                                "Error al actualizar ubicación: ${e.message}"
                                         } finally {
                                             focusRequester.requestFocus() // Solicitar foco en el campo de escanear item
                                         }
@@ -401,15 +433,15 @@ fun UbicacionScreen(username: String) {
 
         // funcion boton limpiar
         if (clearRequested) {
-            Log.d("*MAKITA*" , "entro al if $clearRequested")
+            Log.d("*MAKITA*", "entro al if $clearRequested")
             text = TextFieldValue("")
             response = emptyList()
             clearRequested = false
             errorState = null
             successMessage = null
-            showTerminateButton= false
+            showTerminateButton = false
             showLimpiarButton = true
-            showContinuarProcesoButton= false
+            showContinuarProcesoButton = false
             registrosMessage = null
         }
 
@@ -421,7 +453,7 @@ fun UbicacionScreen(username: String) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                if(showLimpiarButton){
+                if (showLimpiarButton) {
                     Button(
                         onClick = {
                             clearRequested = true
@@ -437,7 +469,7 @@ fun UbicacionScreen(username: String) {
                     }
                 }
 
-                if(showTerminateButton) {
+                if (showTerminateButton) {
                     Button(
                         onClick = {
                             coroutineScope.launch {
@@ -455,7 +487,7 @@ fun UbicacionScreen(username: String) {
                     }
                 }
 
-                if(showContinuarProcesoButton) {
+                if (showContinuarProcesoButton) {
                     Button(
                         onClick = {
 
@@ -464,7 +496,7 @@ fun UbicacionScreen(username: String) {
                             clearRequested = true
                             focusRequester.requestFocus()
 
-                            Log.d("*MAKITA*" , "PASA POR onclik $isTextFieldEnabled")
+                            Log.d("*MAKITA*", "PASA POR onclik $isTextFieldEnabled")
                         },
                         modifier = Modifier.padding(end = 7.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -482,13 +514,13 @@ fun UbicacionScreen(username: String) {
 
         Spacer(modifier = Modifier.height(16.dp))
         if (datos.isNotEmpty() && count == 0) {
-            Log.d("*MAKITA*" , "PASA POR datos.isNotEmpty $isTextFieldEnabled")
+            Log.d("*MAKITA*", "PASA POR datos.isNotEmpty $isTextFieldEnabled")
             val cantidadRegistros = datos.size
             registrosMessage = "Dispositivo con $cantidadRegistros registros"
             isTextFieldEnabled = false
             showTerminateButton = true // Mostrar el botón "Terminar Proceso"
             showLimpiarButton = false
-            showContinuarProcesoButton= true
+            showContinuarProcesoButton = true
 
         }
     }
@@ -508,21 +540,32 @@ fun UbicacionScreen(username: String) {
                                     val fileUri = guardarDatosEnExcel(context, registros)
                                     if (fileUri != null) {
                                         val emailIntent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                            putExtra(Intent.EXTRA_EMAIL, arrayOf("jherrera@makita.cl")) // Reemplaza con el correo del destinatario
+                                            type =
+                                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                            putExtra(
+                                                Intent.EXTRA_EMAIL,
+                                                arrayOf("jherrera@makita.cl")
+                                            ) // Reemplaza con el correo del destinatario
                                             putExtra(Intent.EXTRA_SUBJECT, "Registros de Ubicación")
-                                            putExtra(Intent.EXTRA_TEXT, "Adjunto encontrarás los registros de ubicación.")
+                                            putExtra(
+                                                Intent.EXTRA_TEXT,
+                                                "Adjunto encontrarás los registros de ubicación."
+                                            )
                                             putExtra(Intent.EXTRA_STREAM, fileUri)
                                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
                                         emailLauncher.launch(emailIntent)
 
 
-                                        showDialog = false  // Cerrar el modal después de enviar y borrar
+                                        showDialog =
+                                            false  // Cerrar el modal después de enviar y borrar
 
                                     } else {
                                         errorState = "Error al crear el archivo para el correo."
-                                        Log.e("*MAKITA*", "Error al crear el archivo para el correo.")
+                                        Log.e(
+                                            "*MAKITA*",
+                                            "Error al crear el archivo para el correo."
+                                        )
                                     }
                                 } else {
                                     Log.e("*MAKITA*", "No hay registros para enviar.")
@@ -544,7 +587,7 @@ fun UbicacionScreen(username: String) {
         )
     }
 
-}
+} // Fin de UbicacionScreen
 
 
 fun formatTimestamp(timestamp: Long): String {

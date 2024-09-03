@@ -44,17 +44,20 @@ class MainActivity : ComponentActivity() {
         ) {
             composable("login") {
                 LoginScreen(
-                    onLoginSuccess = { username, area ->
-                        Log.d("*MAKITA*", "SQLITE 02 : ${username} ,  ${area}")
-                        navController.navigate("menu/$username/$area")
+                    onLoginSuccess = { username, area , vigencia ->
+                        Log.d("*MAKITA*", "SQLITE 02 : ${username} ,  ${area} , ${vigencia}")
+                        navController.navigate("menu/$username/$area/${vigencia}")
                     }
                 )
             }
-            composable("menu/{username}/{area}") { backStackEntry ->
+            composable("menu/{username}/{area}/{vigencia}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
-                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area")
-                MenuScreen(nombreUsuario = username, area = area, navController = navController)
+                // Extraer vigencia como cadena y luego convertirla a Long
+                val vigenciaString = backStackEntry.arguments?.getString("vigencia") ?: "0"
+                val vigencia = vigenciaString.toLongOrNull() ?: 0L
+                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area , $vigencia")
+                MenuScreen(nombreUsuario = username, area = area, vigencia = vigencia ,navController = navController)
             }
             composable("ubicacion/{username}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""

@@ -52,6 +52,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.datastore.core.android)
+    implementation(libs.places)
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion") {
         exclude(group = "com.intellij", module = "annotations")
