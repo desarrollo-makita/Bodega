@@ -30,6 +30,7 @@ import com.makita.ubiapp.ui.dialogs.VigenciaDialog
 fun MenuScreen(
     nombreUsuario: String,
     area: String,
+    idUsuario: Int,
     vigencia: Long,
     navController: NavController
 ) {
@@ -37,7 +38,6 @@ fun MenuScreen(
     val scrollState = rememberScrollState()
     var showVigenciaDialog by remember { mutableStateOf(false) }
 
-    Log.e("*MAKITA*", "Vigencia $vigencia")
     // Efecto para mostrar el diálogo de vigencia
     LaunchedEffect(vigencia) {
         if (vigencia <= 90) {
@@ -49,11 +49,9 @@ fun MenuScreen(
     if (showVigenciaDialog) {
         VigenciaDialog(
             vigencia = vigencia,
+            idUsuario = idUsuario,
+            nombreUsuario = nombreUsuario,
             onDismiss = { showVigenciaDialog = false },
-            onUpdatePassword = {
-                // Lógica para manejar la actualización de la clave
-                Log.d("*MAKITA*", "Actualizar clave clicked")
-            }
         )
     }
 

@@ -44,20 +44,29 @@ class MainActivity : ComponentActivity() {
         ) {
             composable("login") {
                 LoginScreen(
-                    onLoginSuccess = { username, area , vigencia ->
-                        Log.d("*MAKITA*", "SQLITE 02 : ${username} ,  ${area} , ${vigencia}")
-                        navController.navigate("menu/$username/$area/${vigencia}")
+                    onLoginSuccess = { username, area , idUsuario, vigencia ->
+
+                        navController.navigate("menu/$username/$area/$idUsuario/${vigencia}")
                     }
                 )
             }
-            composable("menu/{username}/{area}/{vigencia}") { backStackEntry ->
+            composable("menu/{username}/{area}/{idUsuario}/{vigencia}") { backStackEntry ->
+
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
-                // Extraer vigencia como cadena y luego convertirla a Long
+                val idUsuarioString = backStackEntry.arguments?.getString("idUsuario") ?: "0"
+                val idUsuario = idUsuarioString.toIntOrNull() ?: 0
+
                 val vigenciaString = backStackEntry.arguments?.getString("vigencia") ?: "0"
                 val vigencia = vigenciaString.toLongOrNull() ?: 0L
-                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area , $vigencia")
-                MenuScreen(nombreUsuario = username, area = area, vigencia = vigencia ,navController = navController)
+                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area , $idUsuario,$vigencia")
+                MenuScreen(
+                    nombreUsuario = username,
+                    area = area,
+                    idUsuario = idUsuario,
+                    vigencia = vigencia,
+                    navController = navController
+                )
             }
             composable("ubicacion/{username}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""

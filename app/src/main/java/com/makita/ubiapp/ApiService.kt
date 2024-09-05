@@ -31,8 +31,9 @@ data class RegistroUbicacionRequest(
 
 data class LoginRequest(
     val nombreUsuario: String,
-    val clave: String
-)
+    val clave: String,
+ )
+
 data class LoginResponse(
     val status: Int,
     val message: String,
@@ -64,6 +65,15 @@ data class MenuItem(
     val Clase: String
 )
 
+data class CambioClaveRequest(
+    val nombreUsuario: String,
+    val clave: String,
+    val idUsuario: Int
+)
+data class CambioClaveResponse(
+    val status: Int,
+    val message: String,
+)
 
 interface ApiService {
 
@@ -76,4 +86,9 @@ interface ApiService {
 
     @POST("api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    // Nuevo método para validar la clave actual
+    @POST("api/valida-clave-actual")
+    suspend fun validarClaveActual(@Body request: CambioClaveRequest): Response<CambioClaveResponse>
+
 }

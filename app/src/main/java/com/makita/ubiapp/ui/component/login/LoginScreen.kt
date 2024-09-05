@@ -45,7 +45,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String, Long) -> Unit) {
+fun LoginScreen(onLoginSuccess: (String, String,Int, Long) -> Unit) {
     val context = LocalContext.current
     val appVersion = getAppVersion(context)
     val db = AppDatabase.getDatabase(context)
@@ -201,13 +201,15 @@ fun getAppVersion(context: Context): String {
     }
 }
 
-fun performLogin(nombreUsuario: String, clave: String, loginDao: LoginDao, coroutineScope: CoroutineScope, onLoginSuccess: (String, String, Long) -> Unit) {
+fun performLogin(nombreUsuario: String, clave: String, loginDao: LoginDao, coroutineScope: CoroutineScope, onLoginSuccess: (String, String,Int, Long) -> Unit) {
     coroutineScope.launch {
         try {
             val request = LoginRequest(nombreUsuario, clave)
             val response = RetrofitClient.apiService.login(request)
+
             if (response.isSuccessful) {
                 response.body()?.let { loginResponse ->
+                    Log.e("*MAKITA*" , "la respuesta del login es : $loginResponse")
                     val userData = loginResponse.data
                     if (userData != null) {
                         val loginEntity = LoginEntity(
@@ -221,7 +223,7 @@ fun performLogin(nombreUsuario: String, clave: String, loginDao: LoginDao, corou
                         val fechaFinDate = LocalDate.parse(fechaFin, formatter)
                         val fechaActual = LocalDate.now()
                         val vigencia = ChronoUnit.DAYS.between(fechaActual, fechaFinDate)
-                        onLoginSuccess(userData.NombreUsuario, userData.Area, vigencia)
+                        onLoginSuccess(userData.NombreUsuario, userData.Area, userData.UsuarioID, vigencia)
                     } else {
                         Log.e("*MAKITA*", "El campo 'data' en la respuesta es nulo")
                     }
