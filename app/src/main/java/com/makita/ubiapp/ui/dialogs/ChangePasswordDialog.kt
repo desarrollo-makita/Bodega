@@ -185,6 +185,9 @@ fun ChangePasswordDialog(
                         ),
 
                         )
+
+                }
+                if (isPasswordValid) {
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
@@ -206,7 +209,7 @@ fun ChangePasswordDialog(
                             .onFocusChanged { focusState ->
                                 isFocusedConfirmarClave = focusState.isFocused // Cambia el estado cuando el campo se enfoca
 
-                                            },
+                            },
 
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = GreenMakita,
@@ -216,7 +219,9 @@ fun ChangePasswordDialog(
                         ),
 
                         )
+
                 }
+
 
                 // Mostrar las reglas de contraseña solo cuando el campo esté enfocado
                 if (isFocused) {
