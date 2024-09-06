@@ -12,8 +12,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -22,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -55,7 +59,9 @@ fun ChangePasswordDialog(
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
-    var isCurrentPasswordValid by remember { mutableStateOf<Boolean?>(null) }
+    var isCurrentPasswordValid by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) } // Controla si el campo está enfocado
+    var isFocusedConfirmarClave by remember { mutableStateOf(false) } // Controla si el campo está enfocado
 
     val context = LocalContext.current
     val visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
@@ -75,8 +81,22 @@ fun ChangePasswordDialog(
             try {
                 Log.e("*MAKITA*", "Request: $cambioClaveRequest")
                 val response = RetrofitClient.apiService.validarClaveActual(cambioClaveRequest)
-                val responseBody = response.body()
-                Log.e("*MAKITA*", "Response: ${responseBody.toString()}")
+                if (response.isSuccessful && response.body() != null) {
+                    val responseBody = response.body()
+                    Log.e("*MAKITA*", "Response: ${responseBody.toString()}")
+
+                    // Cambiamos el estado en el hilo principal (UI)
+                    withContext(Dispatchers.Main) {
+                        // Actualizamos el estado isCurrentPasswordValid basado en la respuesta
+                        isCurrentPasswordValid = responseBody?.status == 200 // o la lógica que quieras usar
+                    }
+                }else{
+                    // Manejo de error en la respuesta
+                    withContext(Dispatchers.Main) {
+                        isCurrentPasswordValid = false
+                        Toast.makeText(context, "Error en la validación: ${response.message()}", Toast.LENGTH_SHORT).show()
+                    }
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     isCurrentPasswordValid = false
@@ -85,17 +105,37 @@ fun ChangePasswordDialog(
             }
         }
     }
-
+// Actualizar la validez de la clave mientras el usuario escribe
+    LaunchedEffect(currentPassword) {
+        Log.e("*MAKITA*", "Response: $currentPassword")
+        if (currentPassword.isNotEmpty()) {
+            validarClaveActual(idUsuario, currentPassword, nombreUsuario)
+        }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Cambiar Clave", fontSize = 20.sp) },
+        title = { Text("Cambiar Clave", fontSize = 20.sp , fontWeight = FontWeight.Bold , color = GreenMakita) },
         text = {
             Column {
                 OutlinedTextField(
+
                     value = currentPassword,
                     onValueChange = { currentPassword = it },
-                    label = { Text("Clave Actual") },
-                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = "Clave Actual") },
+                    label = {
+                        Text(
+                            text = "Clave Actual",
+                            style = TextStyle(
+                                fontWeight = FontWeight.Bold,
+                                color = GreenMakita
+                            )
+                        ) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = if (isCurrentPasswordValid) Icons.Filled.LockOpen else Icons.Filled.Lock,
+                            contentDescription = "Clave Actual",
+                            tint = if (isCurrentPasswordValid) GreenMakita else Color.Gray
+                        )
+                    },
                     visualTransformation = visualTransformation,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -105,51 +145,110 @@ fun ChangePasswordDialog(
                                 // Llamamos a validarClaveActual cuando el usuario pierde el foco
                                 validarClaveActual(idUsuario, currentPassword, nombreUsuario)
                             }
-                        }
+                        },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = GreenMakita,
+                        unfocusedBorderColor = GreenMakita,
+                        focusedLabelColor = GreenMakita,
+                        cursorColor = GreenMakita,
+                    )
+
                 )
-                OutlinedTextField(
-                    value = newPassword,
-                    onValueChange = { newPassword = it },
-                    label = { Text("Nueva Clave") },
-                    leadingIcon = { Icon(Icons.Filled.LockOpen, contentDescription = "Nueva Clave") },
-                    visualTransformation = visualTransformation,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Confirmar Clave") },
-                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = "Confirmar Clave") },
-                    visualTransformation = visualTransformation,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-                Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                    Text(
-                        "• Debe tener al menos 8 caracteres",
-                        color = if (hasMinLength) GreenMakita else Color.Red,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        "• Debe contener una letra mayúscula",
-                        color = if (hasUpperCase) GreenMakita else Color.Red,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        "• Debe contener un carácter especial",
-                        color = if (hasSpecialChar) GreenMakita else Color.Red,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        if (doPasswordsMatch) "Las contraseñas coinciden" else "Las contraseñas no coinciden",
-                        color = if (doPasswordsMatch) GreenMakita else Color.Red,
-                        fontSize = 14.sp
-                    )
+                if (isCurrentPasswordValid) {
+                    OutlinedTextField(
+                        value = newPassword,
+                        onValueChange = { newPassword = it },
+                        label = { Text("Nueva Clave" ,
+                            style = TextStyle(
+                                fontWeight = FontWeight.Bold,
+                                color = GreenMakita
+                            )) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = if (isPasswordValid) Icons.Filled.LockOpen else Icons.Filled.Lock,
+                                contentDescription = "Nueva Clave",
+                                tint = if (isPasswordValid) GreenMakita else Color.Gray
+                            )
+                        },
+                        visualTransformation = visualTransformation,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .onFocusChanged { focusState ->
+                                isFocused = focusState.isFocused // Cambia el estado cuando el campo se enfoca
+                            },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = GreenMakita,
+                            unfocusedBorderColor = GreenMakita,
+                            focusedLabelColor = GreenMakita,
+                            cursorColor = GreenMakita,
+                        ),
+
+                        )
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text("Confirmar Clave",style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = GreenMakita
+                        )) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = if (isFocusedConfirmarClave && doPasswordsMatch) Icons.Filled.LockOpen else Icons.Filled.Lock,
+                                contentDescription = "Confirmar Clave",
+                                tint = if (isFocusedConfirmarClave && doPasswordsMatch) GreenMakita else Color.Gray
+                            )
+                        },
+                        visualTransformation = visualTransformation,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .onFocusChanged { focusState ->
+                                isFocusedConfirmarClave = focusState.isFocused // Cambia el estado cuando el campo se enfoca
+
+                                            },
+
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = GreenMakita,
+                            unfocusedBorderColor = GreenMakita,
+                            focusedLabelColor = GreenMakita,
+                            cursorColor = GreenMakita,
+                        ),
+
+                        )
                 }
-            }
+
+                // Mostrar las reglas de contraseña solo cuando el campo esté enfocado
+                if (isFocused) {
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        Text(
+                            "• Debe tener al menos 8 caracteres",
+                            color = if (hasMinLength) GreenMakita else Color.Red,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            "• Debe contener una letra mayúscula",
+                            color = if (hasUpperCase) GreenMakita else Color.Red,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            "• Debe contener un carácter especial",
+                            color = if (hasSpecialChar) GreenMakita else Color.Red,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+                    if (isFocusedConfirmarClave) {
+                        Text(
+                            if (doPasswordsMatch) "Las contraseñas coinciden" else "Las contraseñas no coinciden",
+                            color = if (doPasswordsMatch) GreenMakita else Color.Red,
+                            fontSize = 14.sp
+
+                        )
+                    }
+
+                }
+
         },
         confirmButton = {
             Button(
