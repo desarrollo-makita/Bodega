@@ -53,6 +53,8 @@ android {
 dependencies {
     implementation(libs.androidx.datastore.core.android)
     implementation(libs.places)
+
+    // Room
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion") {
         exclude(group = "com.intellij", module = "annotations")
@@ -64,6 +66,7 @@ dependencies {
         exclude(group = "com.intellij", module = "annotations")
     }
 
+    // Navegación y otros componentes de Android
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -74,6 +77,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    // Retrofit para llamadas a APIs
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("androidx.navigation:navigation-compose:2.5.3")
@@ -81,13 +85,18 @@ dependencies {
     // Dependencias para ViewModel y LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+
+    // SavedStateHandle para ViewModel (opcional)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0")
+
+    // Material Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
 
     // Dependencias de Apache POI
     implementation("org.apache.poi:poi:5.2.3")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
 
-
+    // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -95,6 +104,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
 }
-

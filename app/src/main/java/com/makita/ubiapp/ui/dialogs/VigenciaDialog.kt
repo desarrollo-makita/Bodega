@@ -9,44 +9,51 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun VigenciaDialog(vigencia:Long ,
                    idUsuario:Int,
                    nombreUsuario : String,
+                   token : String,
                    onDismiss: () -> Unit) {
 
     // Estado para controlar la visibilidad de ChangePasswordDialog
     var showChangePasswordDialog by remember { mutableStateOf(false) }
 
-    // Mostrar ChangePasswordDialog si showChangePasswordDialog es true
-    if (showChangePasswordDialog) {
-        ChangePasswordDialog(
-            onDismiss = { /* handle dismiss */ },
-            onConfirm = { vigencia, idUsuario, nombreUsuario ->
-                // Acción cuando se confirma el cambio de contraseña
+    if (!showChangePasswordDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Aviso de Vigencia") },
+            text = { Text("La vigencia expira en ${vigencia} dias." ,  fontSize = 15.sp , fontWeight = FontWeight.Bold) },
+            confirmButton = {
+                Button(onClick = onDismiss) {
+                    Text("Cerrar")
+                }
             },
-            idUsuarioInicial = idUsuario,  // Pasa el valor dinámico de vigencia que ya tienes
-            nombreUsuarioInicial = nombreUsuario,  // Pasa el valor dinámico de idUsuario que ya tienes
-            vigenciaInicial = vigencia
+            dismissButton = {
+                Button(onClick = { showChangePasswordDialog = true }) { // Muestra el diálogo para actualizar la clave
+                    Text("Cambiar Clave")
+                    Log.e("*MAKITA*", "Vigencia $vigencia , $idUsuario, $nombreUsuario ,$token")
+                }
+            }
         )
+
     }
 
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Aviso de Vigencia") },
-        text = { Text("La vigencia expira en ${vigencia} dias.") },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("Cerrar")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { showChangePasswordDialog = true }) { // Muestra el diálogo para actualizar la clave
-                Text("Cambiar Clave")
-                Log.e("*MAKITA*", "Vigencia $vigencia , $idUsuario, $nombreUsuario")
-            }
-        }
-    )
+    // Mostrar ChangePasswordDialog si showChangePasswordDialog es true
+    if (showChangePasswordDialog) {
+
+        ChangePasswordDialog(
+            onDismiss = {
+                showChangePasswordDialog = false
+                onDismiss() },
+            idUsuarioInicial = idUsuario,  // Pasa el valor dinámico de vigencia que ya tienes
+            nombreUsuarioInicial = nombreUsuario,  // Pasa el valor dinámico de idUsuario que ya tienes
+            token = token
+        )
+    }
+
 }

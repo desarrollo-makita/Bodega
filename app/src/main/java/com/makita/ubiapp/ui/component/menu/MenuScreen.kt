@@ -32,6 +32,7 @@ fun MenuScreen(
     area: String,
     idUsuario: Int,
     vigencia: Long,
+    token: String,
     navController: NavController
 ) {
     // Estado de desplazamiento vertical
@@ -51,6 +52,7 @@ fun MenuScreen(
             vigencia = vigencia,
             idUsuario = idUsuario,
             nombreUsuario = nombreUsuario,
+            token= token,
             onDismiss = { showVigenciaDialog = false },
         )
     }

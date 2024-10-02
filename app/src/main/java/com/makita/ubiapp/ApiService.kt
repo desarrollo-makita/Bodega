@@ -3,6 +3,7 @@ package com.makita.ubiapp
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -53,7 +54,8 @@ data class UserData(
     val NombreUsuario: String,
     val Actividad: String,
     val menu: List<MenuItem>,
-    val token: String
+    val token: String,
+    val vigencia: Long
 )
 
 
@@ -67,8 +69,9 @@ data class MenuItem(
 
 data class CambioClaveRequest(
     val nombreUsuario: String,
-    val clave: String,
-    val idUsuario: Int
+    val password: String,
+    val idUsuario: Int,
+    val token: String
 )
 data class CambioClaveResponse(
     val status: Int,
@@ -91,4 +94,8 @@ interface ApiService {
     @POST("api/valida-clave-actual")
     suspend fun validarClaveActual(@Body request: CambioClaveRequest): Response<CambioClaveResponse>
 
+    @PUT("api/editar-usuarios-id")
+    suspend fun editarClave(
+        @Header("Authorization") token: String, // Aquí pasas el token
+        @Body request: CambioClaveRequest): Response<CambioClaveResponse>
 }

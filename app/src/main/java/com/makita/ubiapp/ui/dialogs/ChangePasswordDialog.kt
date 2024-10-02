@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.CambioClaveRequest
 import com.makita.ubiapp.RetrofitClient
+import com.makita.ubiapp.RetrofitClient.apiService
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,19 +42,14 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ChangePasswordDialog(
     onDismiss: () -> Unit,
-    onConfirm: (
-        vigencia: Long,
-        idUsuario: Int,
-        nombreUsuario: String
-    ) -> Unit,
     idUsuarioInicial: Int,         // Agregamos idUsuario inicial como parámetro
     nombreUsuarioInicial: String,  // Agregamos nombreUsuario inicial como parámetro
-    vigenciaInicial: Long          // Agregamos vigencia inicial como parámetro
+    token: String
 ) {
     // Inicializa los estados con los valores iniciales proporcionados
     var idUsuario by remember { mutableStateOf(idUsuarioInicial) }
     var nombreUsuario by remember { mutableStateOf(nombreUsuarioInicial) }
-    var vigencia by remember { mutableStateOf(vigenciaInicial) }
+    var token by remember { mutableStateOf(token) }
 
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
@@ -62,6 +58,10 @@ fun ChangePasswordDialog(
     var isCurrentPasswordValid by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) } // Controla si el campo está enfocado
     var isFocusedConfirmarClave by remember { mutableStateOf(false) } // Controla si el campo está enfocado
+
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var dialogMessage by remember { mutableStateOf("") }
 
     val context = LocalContext.current
     val visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
@@ -76,7 +76,7 @@ fun ChangePasswordDialog(
 
     // Función para validar la clave actual cuando se pierde el foco del campo
     fun validarClaveActual(idUsuario: Int, currentPassword: String, nombreUsuario: String) {
-        val cambioClaveRequest = CambioClaveRequest(nombreUsuario, currentPassword, idUsuario)
+        val cambioClaveRequest = CambioClaveRequest(nombreUsuario, currentPassword, idUsuario , token)
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Log.e("*MAKITA*", "Request: $cambioClaveRequest")
@@ -105,13 +105,15 @@ fun ChangePasswordDialog(
             }
         }
     }
-// Actualizar la validez de la clave mientras el usuario escribe
+
+    // Actualizar la validez de la clave mientras el usuario escribe
     LaunchedEffect(currentPassword) {
         Log.e("*MAKITA*", "Response: $currentPassword")
         if (currentPassword.isNotEmpty()) {
             validarClaveActual(idUsuario, currentPassword, nombreUsuario)
         }
     }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Cambiar Clave", fontSize = 20.sp , fontWeight = FontWeight.Bold , color = GreenMakita) },
@@ -182,9 +184,8 @@ fun ChangePasswordDialog(
                             unfocusedBorderColor = GreenMakita,
                             focusedLabelColor = GreenMakita,
                             cursorColor = GreenMakita,
-                        ),
-
-                        )
+                            ),
+                    )
 
                 }
                 if (isPasswordValid) {
@@ -257,7 +258,19 @@ fun ChangePasswordDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(vigencia, idUsuario, nombreUsuario) },
+                onClick = {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        changePassword(idUsuario, confirmPassword, nombreUsuario,  token,
+                            { message ->
+                                dialogMessage = message
+                                showSuccessDialog = true
+                            },
+                            { message ->
+                                dialogMessage = message
+                                showErrorDialog = true
+                            })
+                    }
+                },
                 enabled = isButtonEnabled
             ) {
                 Text("Confirmar")
@@ -270,4 +283,75 @@ fun ChangePasswordDialog(
         },
         containerColor = Color.White
     )
+
+    // Muestra un diálogo de éxito
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { showSuccessDialog = false },
+            title = { Text("Éxito" ,  fontSize = 20.sp , fontWeight = FontWeight.Bold , color = GreenMakita) },
+            text = { Text(dialogMessage ,  fontSize = 15.sp ) },
+            confirmButton = {
+                Button(onClick = {
+                    showSuccessDialog = false
+                    onDismiss()
+                }) {
+                    Text("Aceptar")
+
+                }
+            }
+        )
+    }
+
+    // Muestra un diálogo de error
+    if (showErrorDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showErrorDialog = false
+                onDismiss()
+            },
+            title = { Text("Error",  fontSize = 20.sp , fontWeight = FontWeight.Bold , color = Color.Red) },
+            text = { Text(dialogMessage,  fontSize = 15.sp , fontWeight = FontWeight.Bold ) },
+            confirmButton = {
+                Button(onClick = {
+                    showErrorDialog = false
+                    onDismiss()
+                }) {
+
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
 }
+
+suspend fun changePassword(idUsuario: Int, confirmPassword: String, nombreUsuario: String , token: String , onSuccess: (String) -> Unit,
+                           onError: (String) -> Unit) {
+    try {
+        Log.e("*MAKITA*", "ResponseOK: ${idUsuario} , ${confirmPassword} , ${nombreUsuario} , ${token}" )
+        val response = apiService.editarClave(
+            token = "Bearer $token",
+            CambioClaveRequest(
+                nombreUsuario = nombreUsuario,
+                password = confirmPassword,
+                idUsuario = idUsuario,
+                token = token
+
+            )
+        )
+
+        if (response.isSuccessful) {
+            // Llama a onSuccess con el mensaje deseado
+
+            onSuccess("La contraseña ha sido cambiada exitosamente.")
+        } else {
+            // Manejo de error en la respuesta
+
+            onError("Error: ${response.message()}")
+        }
+
+    } catch (e: Exception) {
+        Log.e("*MAKITA*", "ResponseError:${e.message}")
+    }
+}
+
+

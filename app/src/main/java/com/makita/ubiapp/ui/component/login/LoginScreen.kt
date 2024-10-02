@@ -1,8 +1,9 @@
+// Archivo: LoginScreen.kt
 package com.makita.ubiapp.ui.component.login
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.util.Log
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -22,40 +22,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.makita.ubiapp.LoginRequest
 import com.makita.ubiapp.R
-import com.makita.ubiapp.RetrofitClient
-import com.makita.ubiapp.ui.component.database.AppDatabase
-import com.makita.ubiapp.ui.component.entity.LoginEntity
-import com.makita.ubiapp.ui.component.ubicaciones.formatTimestamp
+
 import com.makita.ubiapp.ui.dialogs.PasswordRecoveryDialog
 import com.makita.ubiapp.ui.theme.GreenMakita
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
-    var nombreUsuario by remember { mutableStateOf(TextFieldValue()) }
-    var clave by remember { mutableStateOf(TextFieldValue()) }
-    var errorState by remember { mutableStateOf<String?>(null) }
-    var isUsernameFocused by remember { mutableStateOf(false) }
-    var isPasswordFocused by remember { mutableStateOf(false) }
-    var showRecoveryDialog by remember { mutableStateOf(false) }
+fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String) -> Unit) {
+    val loginViewModel: LoginViewModel = viewModel()
 
     val context = LocalContext.current
     val appVersion = getAppVersion(context)
-    val db = AppDatabase.getDatabase(context)
-    val loginDao = db.loginDao()
-    val coroutineScope = rememberCoroutineScope()
+    var showRecoveryDialog by remember { mutableStateOf(false) }
+
 
     // Envuelve el contenido en un Scrollable Column
     Column(
@@ -76,14 +64,15 @@ fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
         )
         // Campo de texto para el nombre de usuario
         OutlinedTextField(
-            value = nombreUsuario,
-            onValueChange = { nombreUsuario = it },
+            value = loginViewModel.nombreUsuario.value,
+            onValueChange = { loginViewModel.nombreUsuario.value = it },
             label = {
                 Text(
                     text = "Usuario",
                     style = TextStyle(
                         fontSize = 18.sp,
-                        fontWeight = if (isUsernameFocused) FontWeight.Bold else FontWeight.Bold, color = GreenMakita
+                        fontWeight = if (loginViewModel.isUsernameFocused.value) FontWeight.Bold else FontWeight.Bold,
+                        color = GreenMakita
                     )
                 )
             },
@@ -91,7 +80,7 @@ fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .onFocusChanged {
-                    isUsernameFocused = it.isFocused
+                    loginViewModel.isUsernameFocused.value = it.isFocused
                 }
                 .background(Color.White, shape = RoundedCornerShape(8.dp)),
             textStyle = TextStyle(color = GreenMakita, fontSize = 15.sp, fontWeight = FontWeight.Bold),
@@ -105,14 +94,15 @@ fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
         )
         // Campo de texto para la contraseña
         OutlinedTextField(
-            value = clave,
-            onValueChange = { clave = it },
+            value = loginViewModel.clave.value,
+            onValueChange = { loginViewModel.clave.value = it },
             label = {
                 Text(
                     text = "Password",
                     style = TextStyle(
                         fontSize = 18.sp,
-                        fontWeight = if (isUsernameFocused) FontWeight.Bold else FontWeight.Bold, color = GreenMakita
+                        fontWeight = if (loginViewModel.isPasswordFocused.value) FontWeight.Bold else FontWeight.Bold,
+                        color = GreenMakita
                     )
                 )
             },
@@ -121,7 +111,7 @@ fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
                 .onFocusChanged {
-                    isPasswordFocused = it.isFocused
+                    loginViewModel.isPasswordFocused.value = it.isFocused
                 }
                 .background(Color.White, shape = RoundedCornerShape(8.dp)),
             textStyle = TextStyle(color = GreenMakita, fontSize = 15.sp, fontWeight = FontWeight.Bold),
@@ -135,7 +125,7 @@ fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
         )
 
         // Mostrar mensaje de error si hay uno
-        errorState?.let { error ->
+        loginViewModel.errorState.value?.let { error ->
             Text(
                 text = error,
                 color = Color.Red,
@@ -147,10 +137,10 @@ fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
             )
         }
 
-        LaunchedEffect(errorState) {
-            if (errorState != null) {
+        LaunchedEffect(loginViewModel.errorState.value) {
+            if (loginViewModel.errorState.value != null) {
                 delay(2000)
-                errorState = null
+                loginViewModel.errorState.value = null
             }
         }
 
@@ -160,42 +150,8 @@ fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
         // Botón de ingreso
         Button(
             onClick = {
-                coroutineScope.launch {
-                    try {
-                        val request = LoginRequest(nombreUsuario.text, clave.text)
-                        val response = RetrofitClient.apiService.login(request)
-                        Log.d("*MAKITA*", "RESPONSE $response $nombreUsuario.text ")
-                        if (response.isSuccessful) {
-                            response.body()?.let { loginResponse ->
-                                val userData = loginResponse.data
-                                Log.d("*MAKITA*", "userData $userData")
-                                if (userData != null) {
-                                    val loginEntity = LoginEntity(
-                                        username = nombreUsuario.text,
-                                        password = clave.text,
-                                        loginTime = formatTimestamp(System.currentTimeMillis())
-                                    )
-
-                                    Log.d("*MAKITA*", "loginEntity $loginEntity")
-                                    loginDao.insertLogin(loginEntity)
-
-                                    onLoginSuccess(userData.NombreUsuario, userData.Area , 22 , userData.UsuarioID)
-                                } else {
-                                    errorState = "Datos de usuario vacíos"
-                                    Log.e("*MAKITA*", "El campo 'data' en la respuesta es nulo")
-                                }
-                            } ?: run {
-                                errorState = "Respuesta vacía del servidor"
-                                Log.e("*MAKITA*", "Respuesta vacía del servidor")
-                            }
-                        } else {
-                            errorState = "Nombre de usuario o contraseña incorrectos. Por favor, inténtalo de nuevo."
-                        }
-
-                    } catch (e: Exception) {
-                        errorState = "Error de conexión: ${e.message}"
-                        Log.e("*MAKITA*", "Error fetching logins: ${e.message}")
-                    }
+                loginViewModel.login { username, area, idUsuario, vigencia, token ->
+                    onLoginSuccess(username, area, idUsuario, vigencia , token)
                 }
             },
             modifier = Modifier
@@ -221,7 +177,6 @@ fun LoginScreen(onLoginSuccess: (String, String, Long , Int) -> Unit) {
             style = TextStyle(
                 fontWeight = FontWeight.Bold // Aplica negrita
             )
-
         )
 
         Spacer(modifier = Modifier.height(100.dp))
@@ -246,8 +201,3 @@ fun getAppVersion(context: Context): String {
         "N/A"
     }
 }
-
-
-
-
-

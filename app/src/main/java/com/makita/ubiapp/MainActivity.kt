@@ -44,13 +44,13 @@ class MainActivity : ComponentActivity() {
         ) {
             composable("login") {
                 LoginScreen(
-                    onLoginSuccess = { username, area , idUsuario, vigencia ->
+                    onLoginSuccess = { username, area , idUsuario, vigencia , token ->
 
-                        navController.navigate("menu/$username/$area/$idUsuario/${vigencia}")
+                        navController.navigate("menu/$username/$area/$idUsuario/${vigencia}/${token}")
                     }
                 )
             }
-            composable("menu/{username}/{area}/{idUsuario}/{vigencia}") { backStackEntry ->
+            composable("menu/{username}/{area}/{vigencia}/{idUsuario}/{token}") { backStackEntry ->
 
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
@@ -59,12 +59,14 @@ class MainActivity : ComponentActivity() {
 
                 val vigenciaString = backStackEntry.arguments?.getString("vigencia") ?: "0"
                 val vigencia = vigenciaString.toLongOrNull() ?: 0L
-                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area , $idUsuario,$vigencia")
+                val token = backStackEntry.arguments?.getString("token") ?: ""
+                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area  ,$vigencia, $idUsuario")
                 MenuScreen(
                     nombreUsuario = username,
                     area = area,
                     idUsuario = idUsuario,
                     vigencia = vigencia,
+                    token = token,
                     navController = navController
                 )
             }
