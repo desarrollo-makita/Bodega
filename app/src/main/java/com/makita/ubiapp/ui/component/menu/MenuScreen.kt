@@ -1,17 +1,18 @@
-import android.util.Log
+package com.makita.ubiapp.ui.dialogs
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -24,7 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Warning
-import com.makita.ubiapp.ui.dialogs.VigenciaDialog
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun MenuScreen(
@@ -35,18 +37,15 @@ fun MenuScreen(
     token: String,
     navController: NavController
 ) {
-    // Estado de desplazamiento vertical
     val scrollState = rememberScrollState()
     var showVigenciaDialog by remember { mutableStateOf(false) }
 
-    // Efecto para mostrar el diálogo de vigencia
     LaunchedEffect(vigencia) {
         if (vigencia <= 90) {
             showVigenciaDialog = true
         }
     }
 
-    // Mostrar diálogo de vigencia si es necesario
     if (showVigenciaDialog) {
         VigenciaDialog(
             vigencia = vigencia,
@@ -57,67 +56,86 @@ fun MenuScreen(
         )
     }
 
-    // Diseño principal de la pantalla
-    Column(
+    // Fondo degradado
+    Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF00909E),
+                        Color(0xFF80CBC4)
+                    )
+                )
+            )
             .padding(16.dp)
-            .background(Color.White, shape = RoundedCornerShape(10.dp))
-            .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .verticalScroll(scrollState)
     ) {
-        MenuHeader(nombreUsuario = nombreUsuario, area = area)
-        MenuOptions(navController = navController, nombreUsuario = nombreUsuario)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White, shape = RoundedCornerShape(20.dp))
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            MenuHeader(nombreUsuario = nombreUsuario, area = area)
+            MenuOptions(navController = navController, nombreUsuario = nombreUsuario)
+        }
     }
 }
 
 @Composable
 fun MenuHeader(nombreUsuario: String, area: String) {
-    // Imagen en la parte superior
     Image(
         painter = painterResource(id = R.drawable.makitafondoblanco),
         contentDescription = "Logo de Makita",
         modifier = Modifier
-            .size(150.dp)
+            .size(120.dp)
             .padding(top = 15.dp)
+            .background(Color(0xFF80CBC4), CircleShape)
     )
 
-    // Texto de bienvenida
     Text(
         text = "Bienvenido: $nombreUsuario",
-        fontSize = 24.sp,
-        fontWeight = FontWeight.Bold
+        fontSize = 26.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color(0xFF004D40),
+        modifier = Modifier.padding(top = 12.dp)
     )
-    Spacer(modifier = Modifier.height(8.dp))
 
-    // Texto para "Área"
     Text(
         text = "Área: $area",
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Medium
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Medium,
+        color = Color(0xFF00796B),
+        modifier = Modifier.padding(top = 4.dp)
     )
+
     Divider(
-        color = Color.Gray,
+        color = Color(0xFF004D40),
         thickness = 1.dp,
-        modifier = Modifier.padding(vertical = 8.dp)
+        modifier = Modifier.padding(vertical = 16.dp)
     )
-    Spacer(modifier = Modifier.height(16.dp))
 }
 
 @Composable
 fun MenuOptions(navController: NavController, nombreUsuario: String) {
-    // Título para los iconos
     Text(
         text = "¿Qué deseas hacer?",
-        fontSize = 20.sp,
+        fontSize = 22.sp,
         fontWeight = FontWeight.Bold,
-        color = Color(0xFF00909E)
+        color = Color(0xFF004D40),
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp)
     )
-    Spacer(modifier = Modifier.height(16.dp))
 
-    // Sección de iconos
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         MenuItem(
             icon = Icons.Default.LocationOn,
             text = "Cambio Ubicación",
@@ -143,22 +161,23 @@ fun MenuItem(icon: ImageVector, text: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp)
+            .shadow(2.dp, RoundedCornerShape(12.dp))
+            .background(Color(0xFFE0F2F1), shape = RoundedCornerShape(12.dp))
+            .padding(vertical = 12.dp, horizontal = 16.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = text,
             modifier = Modifier
-                .size(50.dp)
-                .background(Color(0xFFE0F7FA), shape = RoundedCornerShape(8.dp))
+                .size(48.dp)
                 .padding(8.dp),
-            tint = Color(0xFF00909E)
+            tint = Color(0xFF00796B)
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = text,
-            fontSize = 20.sp,
-            color = Color(0xFF00909E),
+            fontSize = 18.sp,
+            color = Color(0xFF004D40),
             fontWeight = FontWeight.Medium,
             modifier = Modifier.align(Alignment.CenterVertically)
         )

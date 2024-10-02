@@ -1,6 +1,5 @@
 package com.makita.ubiapp
 
-import MenuScreen
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -15,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.makita.ubiapp.ui.component.login.LoginScreen
 import com.makita.ubiapp.ui.component.ubicaciones.UbicacionScreen
+import com.makita.ubiapp.ui.dialogs.MenuScreen
 
 import com.makita.ubiapp.ui.theme.UbiAppTheme
 
