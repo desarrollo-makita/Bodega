@@ -83,7 +83,17 @@ data class CambioClaveResponse(
 data class RecuperarRequest(
     val usuario: String,
 )
+data class RecuperarResponse(
+   val mensaje :  dataRecuperarResponse
+)
 
+data class dataRecuperarResponse(
+    val status: Int,
+    val mensaje: String,
+    val existe : Boolean,
+    val email : String,
+    val idUsuario: Int
+)
 data class ReplaceClaveRequest(
     val data: Data
 )
@@ -113,7 +123,7 @@ interface ApiService {
     suspend fun editarClave(@Header("Authorization") token: String, @Body request: CambioClaveRequest): Response<CambioClaveResponse>
 
     @POST("api/recuperar-password")
-    suspend fun recuperarPassword(@Body request: RecuperarRequest): Response<Unit>
+    suspend fun recuperarPassword(@Body request: RecuperarRequest): Response<RecuperarResponse>
 
     @PUT("api/replace-password-id")
     suspend fun replaceClave(@Body request: ReplaceClaveRequest): Response<CambioClaveResponse>

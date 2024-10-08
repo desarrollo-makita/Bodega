@@ -83,16 +83,35 @@ fun PasswordRecoveryDialog(onDismiss: () -> Unit) {
                         coroutineScope.launch {
                             val request = RecuperarRequest(usuario = username.text)
                             val response = apiService.recuperarPassword(request)
-                            Log.d("*MAKITA" ,"RESPONSE : $response")
 
                             if (response.isSuccessful) {
-                                successMessage = "Se ha enviado una clave temporal a su correo"
+                                Log.d("*MAKITA", "RESPONSE: ${response.body()}")
+
+                                // Verificar si el cuerpo de la respuesta no es null
+                                val responseBody = response.body()
+                                if (responseBody != null && responseBody.mensaje.existe == true) {
+                                    successMessage = "Se ha enviado una clave temporal a su correo"
+
+                                    // Mostrar el mensaje por 2 segundos
+                                    delay(3000)
+                                    successMessage = ""  // Limpia el mensaje después de 2 segundos
+                                    onDismiss()
+                                } else {
+                                    errorMessage = "Ingrese un nombre de usuario válido"
+
+                                    // Mostrar el mensaje por 2 segundos
+                                    delay(3000)
+                                    errorMessage = ""  // Limpia el mensaje después de 2 segundos
+                                }
+                            }else{
+                                errorMessage = "Ingrese un nombre de usuario valido"
 
                                 // Mostrar el mensaje por 2 segundos
                                 delay(3000)
-                                successMessage = ""  // Limpia el mensaje después de 2 segundos
+                                errorMessage = ""  // Limpia el mensaje después de 2 segundos
+
+
                             }
-                            onDismiss()
                         }
 
                     }
