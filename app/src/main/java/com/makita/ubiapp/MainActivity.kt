@@ -15,13 +15,16 @@ import androidx.navigation.compose.composable
 import com.makita.ubiapp.ui.component.login.LoginScreen
 import com.makita.ubiapp.ui.component.ubicaciones.UbicacionScreen
 import com.makita.ubiapp.ui.dialogs.MenuScreen
+import com.makita.ubiapp.ui.dialogs.ReplacePasswordDialog
 
 import com.makita.ubiapp.ui.theme.UbiAppTheme
 
 
 
 class MainActivity : ComponentActivity() {
-
+    var showPasswordDialog by mutableStateOf(false)
+    var userIdForDialog by mutableStateOf(0)
+    var usernameDialog by mutableStateOf("")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -31,6 +34,13 @@ class MainActivity : ComponentActivity() {
                     Log.d("*MAKITA*", "Iniciamos MainActivity")
                     val navController = rememberNavController()
                     SetupNavGraph(navController = navController)
+                    if (showPasswordDialog) {
+                        ReplacePasswordDialog(
+                            onDismiss = { showPasswordDialog = false },
+                            idUsuarioInicial = userIdForDialog,
+                            nombreUsuarioInicial = usernameDialog
+                        )
+                    }
                 }
             }
         }
@@ -44,13 +54,22 @@ class MainActivity : ComponentActivity() {
         ) {
             composable("login") {
                 LoginScreen(
-                    onLoginSuccess = { username, area , idUsuario, vigencia , token ->
 
-                        navController.navigate("menu/$username/$area/$idUsuario/${vigencia}/${token}")
+                    onLoginSuccess = { username, area ,  vigencia ,idUsuario, token , recuperarClave ->
+                        Log.d("*MAKITA*", "recuperarClave :  $idUsuario , $username " )
+                        if(recuperarClave === 1){
+
+                            showPasswordDialog = true
+                            userIdForDialog = idUsuario.toInt()
+                            usernameDialog = username
+                        }else{
+                            navController.navigate("menu/$username/$area/$idUsuario/${vigencia}/${token}/${recuperarClave}")
+                        }
+
                     }
                 )
             }
-            composable("menu/{username}/{area}/{vigencia}/{idUsuario}/{token}") { backStackEntry ->
+            composable("menu/{username}/{area}/{vigencia}/{idUsuario}/{token}/{recuperarClave}") { backStackEntry ->
 
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
@@ -60,7 +79,9 @@ class MainActivity : ComponentActivity() {
                 val vigenciaString = backStackEntry.arguments?.getString("vigencia") ?: "0"
                 val vigencia = vigenciaString.toLongOrNull() ?: 0L
                 val token = backStackEntry.arguments?.getString("token") ?: ""
-                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area  ,$vigencia, $idUsuario")
+                val recuperarClave =  backStackEntry.arguments?.getInt("recuperarClave") ?: 0
+
+                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area  ,$vigencia, $idUsuario, $recuperarClave " )
                 MenuScreen(
                     nombreUsuario = username,
                     area = area,
@@ -77,7 +98,5 @@ class MainActivity : ComponentActivity() {
 
         }
     }
-
-
 
 }

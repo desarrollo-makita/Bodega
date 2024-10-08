@@ -11,8 +11,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -27,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.R
@@ -37,13 +43,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String) -> Unit) {
+fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String , Int) -> Unit) {
     val loginViewModel: LoginViewModel = viewModel()
 
     val context = LocalContext.current
     val appVersion = getAppVersion(context)
     var showRecoveryDialog by remember { mutableStateOf(false) }
-
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     // Envuelve el contenido en un Scrollable Column
     Column(
@@ -76,6 +82,7 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String) -> Unit) {
                     )
                 )
             },
+
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -85,6 +92,7 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String) -> Unit) {
                 .background(Color.White, shape = RoundedCornerShape(8.dp)),
             textStyle = TextStyle(color = GreenMakita, fontSize = 15.sp, fontWeight = FontWeight.Bold),
             singleLine = true,
+
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = GreenMakita,
                 unfocusedBorderColor = GreenMakita,
@@ -106,7 +114,8 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String) -> Unit) {
                     )
                 )
             },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -116,6 +125,21 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String) -> Unit) {
                 .background(Color.White, shape = RoundedCornerShape(8.dp)),
             textStyle = TextStyle(color = GreenMakita, fontSize = 15.sp, fontWeight = FontWeight.Bold),
             singleLine = true,
+            trailingIcon = {
+                // Aquí se añade el ícono para mostrar/ocultar la contraseña
+                val icon = if (isPasswordVisible) {
+                    Icons.Default.Visibility // Asegúrate de tener este ícono en tu drawable
+                } else {
+                    Icons.Default.VisibilityOff// Asegúrate de tener este ícono en tu drawable
+                }
+
+                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = if (isPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                    )
+                }
+            },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = GreenMakita,
                 unfocusedBorderColor = GreenMakita,
@@ -150,8 +174,8 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String) -> Unit) {
         // Botón de ingreso
         Button(
             onClick = {
-                loginViewModel.login { username, area, idUsuario, vigencia, token ->
-                    onLoginSuccess(username, area, idUsuario, vigencia , token)
+                loginViewModel.login { username, area, idUsuario, vigencia, token , recuperarClave->
+                    onLoginSuccess(username, area, idUsuario, vigencia , token , recuperarClave)
                 }
             },
             modifier = Modifier

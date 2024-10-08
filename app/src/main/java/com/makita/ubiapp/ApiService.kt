@@ -55,7 +55,8 @@ data class UserData(
     val Actividad: String,
     val menu: List<MenuItem>,
     val token: String,
-    val vigencia: Long
+    val vigencia: Long,
+    val recuperarClave: Int
 )
 
 
@@ -78,6 +79,20 @@ data class CambioClaveResponse(
     val message: String,
 )
 
+
+data class RecuperarRequest(
+    val usuario: String,
+)
+
+data class ReplaceClaveRequest(
+    val data: Data
+)
+
+data class Data(
+    val idUsuario: Int,
+    val password: String
+)
+
 interface ApiService {
 
     @GET("api/obtener-ubicacion/{ubicacion}")
@@ -95,7 +110,11 @@ interface ApiService {
     suspend fun validarClaveActual(@Body request: CambioClaveRequest): Response<CambioClaveResponse>
 
     @PUT("api/editar-usuarios-id")
-    suspend fun editarClave(
-        @Header("Authorization") token: String, // Aquí pasas el token
-        @Body request: CambioClaveRequest): Response<CambioClaveResponse>
+    suspend fun editarClave(@Header("Authorization") token: String, @Body request: CambioClaveRequest): Response<CambioClaveResponse>
+
+    @POST("api/recuperar-password")
+    suspend fun recuperarPassword(@Body request: RecuperarRequest): Response<Unit>
+
+    @PUT("api/replace-password-id")
+    suspend fun replaceClave(@Body request: ReplaceClaveRequest): Response<CambioClaveResponse>
 }

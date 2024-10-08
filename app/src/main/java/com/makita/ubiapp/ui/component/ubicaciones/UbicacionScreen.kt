@@ -5,9 +5,11 @@ import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 
@@ -28,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -53,6 +56,7 @@ import java.util.Locale
 import java.util.TimeZone
 import com.makita.ubiapp.ui.component.archivo.guardarDatosEnExcel
 
+// conserva los datos cuando cambia de orientacion el dispositivo
 val TextFieldValueSaver: Saver<TextFieldValue, String> = Saver(
     save = { it.text }, // Guarda solo el texto
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
@@ -60,13 +64,10 @@ val TextFieldValueSaver: Saver<TextFieldValue, String> = Saver(
 @Composable
 fun UbicacionScreen(username: String) {
 
+    // Declaraciones de variables mutable
     val apiService = RetrofitClient.apiService
     var text by rememberSaveable(stateSaver = TextFieldValueSaver) { mutableStateOf(TextFieldValue()) }
-    var nuevaUbicacion by rememberSaveable(stateSaver = TextFieldValueSaver) {
-        mutableStateOf(
-            TextFieldValue()
-        )
-    }
+    var nuevaUbicacion by rememberSaveable(stateSaver = TextFieldValueSaver) {mutableStateOf(TextFieldValue())}
     var response by rememberSaveable { mutableStateOf<List<UbicacionResponse>>(emptyList()) }
     var clearRequested by rememberSaveable { mutableStateOf(false) }
     var errorState by rememberSaveable { mutableStateOf<String?>(null) }
@@ -85,11 +86,10 @@ fun UbicacionScreen(username: String) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
+    // base de datos en memoria
     val registrarUbicacionDao = db.registrarUbicacion()
 
-    val emailLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
+    val emailLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
         Log.d("*MAKITA*", "Resul envio Correo : $result")
         coroutineScope.launch {
             if (result.resultCode == Activity.RESULT_CANCELED) {
@@ -149,11 +149,29 @@ fun UbicacionScreen(username: String) {
         }
     }
 
-    Column(
+    // Inicio de interface
+    // Fondo degradado
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF00909E),
+                        Color(0xFF80CBC4)
+                    )
+                )
+            )
+            .padding(16.dp)
+
+    ) { Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()) // Agregar scroll aquí
             .padding(16.dp)
+            .background(Color.White, shape = RoundedCornerShape(20.dp))
+            .padding(24.dp),
+
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -169,13 +187,20 @@ fun UbicacionScreen(username: String) {
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
                 .focusRequester(focusRequester),
-            label = { Text("Escanear Item") },
+            label = { Text("Escanear Item" ,
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = GreenMakita
+            )) },
             enabled = isTextFieldEnabled,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GreenMakita,
-                unfocusedBorderColor = Color.Gray,
-                focusedLabelColor = GreenMakita,
-                cursorColor = GreenMakita,
+                focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
+                unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
+                focusedLabelColor = GreenMakita,      // Color del label cuando el campo está enfocado
+                unfocusedLabelColor = GreenMakita,    // Color del label cuando no está enfocado
+                cursorColor = GreenMakita,            // Color del cursor en GreenMakita
+
             ),
             trailingIcon = {
                 Icon(
@@ -523,7 +548,8 @@ fun UbicacionScreen(username: String) {
             showContinuarProcesoButton = true
 
         }
-    }
+    }}
+
 
     if (showDialog) {
         AlertDialog(

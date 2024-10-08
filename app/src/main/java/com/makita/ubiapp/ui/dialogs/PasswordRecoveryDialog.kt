@@ -7,41 +7,94 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import android.util.Log
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.makita.ubiapp.RecuperarRequest
+import com.makita.ubiapp.RetrofitClient.apiService
+import com.makita.ubiapp.ui.theme.GreenMakita
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun PasswordRecoveryDialog(onDismiss: () -> Unit) {
-    var email by remember { mutableStateOf(TextFieldValue()) }
+    var username by remember { mutableStateOf(TextFieldValue()) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    var successMessage by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
         title = {
-            Text(text = "Recuperar Contraseña")
-        },
+            Text(text = "Recuperar Contraseña",
+                style = TextStyle(
+                fontSize = 20.sp,
+                color = GreenMakita,
+                fontWeight = FontWeight.Bold
+            ))
+            },
         text = {
             Column {
-                Text("Introduce tu correo electrónico para recuperar tu contraseña:")
+                Text("Introduce tu nombre de usuario:",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        color = GreenMakita,
+
+                    ))
+                Spacer(modifier = Modifier.height(25.dp))
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Correo Electrónico") },
+                    value = username,
+                    onValueChange = { username = it },
+
+                    label = { Text("Nombre de usuario",
+                        style = TextStyle(
+                            fontSize = 18.sp,
+                            color = GreenMakita,
+                            fontWeight = FontWeight.Bold
+                        )) },
                     singleLine = true,
                     isError = errorMessage != null,
                     modifier = Modifier.fillMaxWidth(),
+
                 )
                 errorMessage?.let {
                     Text(text = it, color = Color.Red)
                 }
+                // Mostrar mensaje de éxito si está disponible
+                if (successMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = successMessage,
+                        color = GreenMakita,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (email.text.isEmpty()) {
-                        errorMessage = "El correo electrónico no puede estar vacío"
+                    if (username.text.isEmpty()) {
+                        errorMessage = "El nombre de usuario no puede estar vacío"
                     } else {
-                        Log.d("*MAKITA*", "Correo de recuperación enviado a: ${email.text}")
-                        onDismiss()
+                        coroutineScope.launch {
+                            val request = RecuperarRequest(usuario = username.text)
+                            val response = apiService.recuperarPassword(request)
+                            Log.d("*MAKITA" ,"RESPONSE : $response")
+
+                            if (response.isSuccessful) {
+                                successMessage = "Se ha enviado una clave temporal a su correo"
+
+                                // Mostrar el mensaje por 2 segundos
+                                delay(3000)
+                                successMessage = ""  // Limpia el mensaje después de 2 segundos
+                            }
+                            onDismiss()
+                        }
+
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))
@@ -49,6 +102,8 @@ fun PasswordRecoveryDialog(onDismiss: () -> Unit) {
                 Text("Enviar")
             }
         },
+
+
         dismissButton = {
             Button(onClick = { onDismiss() } ,    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))) {
                 Text("Cancelar")
@@ -56,3 +111,4 @@ fun PasswordRecoveryDialog(onDismiss: () -> Unit) {
         }
     )
 }
+

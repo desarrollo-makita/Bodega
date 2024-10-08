@@ -1,4 +1,3 @@
-// Archivo: LoginViewModel.kt
 package com.makita.ubiapp.ui.component.login
 
 import android.util.Log
@@ -7,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.makita.ubiapp.LoginRequest
 import com.makita.ubiapp.RetrofitClient
+import com.makita.ubiapp.UserData
 import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
@@ -16,7 +16,7 @@ class LoginViewModel : ViewModel() {
     var isUsernameFocused = mutableStateOf(false)
     var isPasswordFocused = mutableStateOf(false)
 
-    fun login(onLoginSuccess: (String, String, Long, Int ,String) -> Unit) {
+    fun login(onLoginSuccess: (String, String, Long, Int ,String , Int) -> Unit) {
         viewModelScope.launch {
             try {
                 val request = LoginRequest(nombreUsuario.value, clave.value)
@@ -27,7 +27,7 @@ class LoginViewModel : ViewModel() {
                         Log.d("*MAKITA*", "userData $userData")
                         if (userData != null) {
 
-                            onLoginSuccess(userData.NombreUsuario, userData.Area, userData.vigencia, userData.UsuarioID , userData.token)
+                            onLoginSuccess(userData.NombreUsuario, userData.Area, userData.vigencia, userData.UsuarioID , userData.token , userData.recuperarClave)
                         } else {
                             errorState.value = "Datos de usuario vacíos"
                         }

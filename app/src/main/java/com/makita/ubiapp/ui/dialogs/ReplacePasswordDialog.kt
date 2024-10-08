@@ -31,6 +31,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.CambioClaveRequest
+import com.makita.ubiapp.Data
+import com.makita.ubiapp.ReplaceClaveRequest
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.RetrofitClient.apiService
 import com.makita.ubiapp.ui.theme.GreenMakita
@@ -40,16 +42,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ChangePasswordDialog(
+fun ReplacePasswordDialog(
     onDismiss: () -> Unit,
-    idUsuarioInicial: Int,         // Agregamos idUsuario inicial como parámetro
-    nombreUsuarioInicial: String,  // Agregamos nombreUsuario inicial como parámetro
-    token: String
+    idUsuarioInicial: Int,
+    nombreUsuarioInicial: String
 ) {
     // Inicializa los estados con los valores iniciales proporcionados
     var idUsuario by remember { mutableStateOf(idUsuarioInicial) }
     var nombreUsuario by remember { mutableStateOf(nombreUsuarioInicial) }
-    var token by remember { mutableStateOf(token) }
 
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
@@ -76,11 +76,15 @@ fun ChangePasswordDialog(
 
     // Función para validar la clave actual cuando se pierde el foco del campo
     fun validarClaveActual(idUsuario: Int, currentPassword: String, nombreUsuario: String) {
-        val cambioClaveRequest = CambioClaveRequest(nombreUsuario, currentPassword, idUsuario , token)
+
+        val cambioClaveRequest = CambioClaveRequest(nombreUsuario, currentPassword, idUsuario, ""  )
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Log.e("*MAKITA*", "Request: $cambioClaveRequest")
+
                 val response = RetrofitClient.apiService.validarClaveActual(cambioClaveRequest)
+
                 if (response.isSuccessful && response.body() != null) {
                     val responseBody = response.body()
                     Log.e("*MAKITA*", "Response: ${responseBody.toString()}")
@@ -116,7 +120,7 @@ fun ChangePasswordDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Cambiar Clave", fontSize = 20.sp , fontWeight = FontWeight.Bold , color = GreenMakita) },
+        title = { Text("Cambiar Clave Temporal", fontSize = 20.sp , fontWeight = FontWeight.Bold , color = GreenMakita) },
         text = {
             Column {
                 OutlinedTextField(
@@ -125,7 +129,7 @@ fun ChangePasswordDialog(
                     onValueChange = { currentPassword = it },
                     label = {
                         Text(
-                            text = "Clave Actual",
+                            text = "Clave Temporal",
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 color = GreenMakita
@@ -260,7 +264,7 @@ fun ChangePasswordDialog(
             Button(
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
-                        changePassword(idUsuario, confirmPassword, nombreUsuario,  token,
+                        replacePassword(idUsuario, confirmPassword, nombreUsuario,  "",
                             { message ->
                                 dialogMessage = message
                                 showSuccessDialog = true
@@ -324,18 +328,17 @@ fun ChangePasswordDialog(
     }
 }
 
-suspend fun changePassword(idUsuario: Int, confirmPassword: String, nombreUsuario: String , token: String , onSuccess: (String) -> Unit,
+suspend fun replacePassword(idUsuario: Int, confirmPassword: String, nombreUsuario: String , token: String , onSuccess: (String) -> Unit,
                            onError: (String) -> Unit) {
     try {
-        Log.e("*MAKITA*", "ResponseOK: ${idUsuario} , ${confirmPassword} , ${nombreUsuario} , ${token}" )
-        val response = apiService.editarClave(
-            token = "Bearer $token",
-            CambioClaveRequest(
-                nombreUsuario = nombreUsuario,
-                password = confirmPassword,
-                idUsuario = idUsuario,
-                token = token
+        Log.e("*MAKITA*", "replacePassword: ${idUsuario} , ${confirmPassword} , ${nombreUsuario} , ${token}" )
+        val response = apiService.replaceClave(
+            ReplaceClaveRequest(
+                data = Data(
+                    idUsuario = idUsuario,
+                    password = confirmPassword,
 
+                )
             )
         )
 
