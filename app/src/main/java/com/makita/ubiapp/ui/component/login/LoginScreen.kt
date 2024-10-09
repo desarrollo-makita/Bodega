@@ -43,9 +43,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String , Int) -> Unit) {
-    val loginViewModel: LoginViewModel = viewModel()
+fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int) -> Unit) {
 
+    val loginViewModel: LoginViewModel = viewModel()
     val context = LocalContext.current
     val appVersion = getAppVersion(context)
     var showRecoveryDialog by remember { mutableStateOf(false) }
@@ -174,8 +174,9 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int ,String , Int) -> Uni
         // Botón de ingreso
         Button(
             onClick = {
-                loginViewModel.login { username, area, idUsuario, vigencia, token , recuperarClave->
-                    onLoginSuccess(username, area, idUsuario, vigencia , token , recuperarClave)
+
+                loginViewModel.login { username, area, vigencia, idUsuario,token , recuperarClave->
+                    onLoginSuccess(username, area, vigencia,idUsuario , token , recuperarClave)
                 }
             },
             modifier = Modifier

@@ -18,6 +18,7 @@ import com.makita.ubiapp.ui.dialogs.MenuScreen
 import com.makita.ubiapp.ui.dialogs.ReplacePasswordDialog
 
 import com.makita.ubiapp.ui.theme.UbiAppTheme
+import com.makita.ubiapp.ui.util.DeviceInfoUtil
 
 
 
@@ -25,13 +26,14 @@ class MainActivity : ComponentActivity() {
     var showPasswordDialog by mutableStateOf(false)
     var userIdForDialog by mutableStateOf(0)
     var usernameDialog by mutableStateOf("")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             UbiAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Log.d("*MAKITA*", "Iniciamos MainActivity")
+                    Log.d("*MAKITA*", "Iniciamos MainActivity - UbiAppTheme")
                     val navController = rememberNavController()
                     SetupNavGraph(navController = navController)
                     if (showPasswordDialog) {
@@ -55,15 +57,19 @@ class MainActivity : ComponentActivity() {
             composable("login") {
                 LoginScreen(
 
-                    onLoginSuccess = { username, area ,  vigencia ,idUsuario, token , recuperarClave ->
-                        Log.d("*MAKITA*", "recuperarClave :  $idUsuario , $username " )
+                    onLoginSuccess = { username, area ,vigencia,idUsuario ,token , recuperarClave ->
+                        Log.d("*MAKITA*", "SetupNavGraph :  $username , $area ,  $vigencia ,$idUsuario ,  $token , $recuperarClave" )
+
+                        DeviceInfoUtil.registrarInformacionDispositivo(context = this@MainActivity, nombreUsuario = username)
+
                         if(recuperarClave === 1){
 
                             showPasswordDialog = true
                             userIdForDialog = idUsuario.toInt()
                             usernameDialog = username
                         }else{
-                            navController.navigate("menu/$username/$area/$idUsuario/${vigencia}/${token}/${recuperarClave}")
+
+                            navController.navigate("menu/$username/$area/${vigencia}/${idUsuario}/${token}/${recuperarClave}")
                         }
 
                     }
@@ -81,12 +87,12 @@ class MainActivity : ComponentActivity() {
                 val token = backStackEntry.arguments?.getString("token") ?: ""
                 val recuperarClave =  backStackEntry.arguments?.getInt("recuperarClave") ?: 0
 
-                Log.d("*MAKITA*", "backStackEntry 03 : $username , $area  ,$vigencia, $idUsuario, $recuperarClave " )
+                Log.d("*MAKITA*", "MainActivity 01 : $username , $area  ,$vigencia,$idUsuario,$token, $recuperarClave " )
                 MenuScreen(
-                    nombreUsuario = username,
-                    area = area,
+                    nombreUsuario = username, // jherreras
+                    area = area, // herramientas
+                    vigencia = vigencia, // 52
                     idUsuario = idUsuario,
-                    vigencia = vigencia,
                     token = token,
                     navController = navController
                 )

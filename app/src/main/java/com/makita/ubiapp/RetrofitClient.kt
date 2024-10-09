@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://172.16.1.112:3024/"  // Reemplaza con tu dirección IP o dominio
+    private const val BASE_URL = "http://172.16.2.201:3024/"  // Reemplaza con tu dirección IP o dominio
 
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)

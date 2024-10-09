@@ -103,6 +103,22 @@ data class Data(
     val password: String
 )
 
+data class DataDispositivo(
+     val usuario: String,
+     val modelo : String,
+     val fabricante : String,
+     val sistemaOperativo : String,
+     val numeroSerie : String,
+     val idAndroid : String,
+)
+
+data class DataDispositivoRequest(
+    val dataDispositivo: DataDispositivo
+)
+data class DispositivoResponse(
+    val message : String
+)
+
 interface ApiService {
 
     @GET("api/obtener-ubicacion/{ubicacion}")
@@ -127,4 +143,7 @@ interface ApiService {
 
     @PUT("api/replace-password-id")
     suspend fun replaceClave(@Body request: ReplaceClaveRequest): Response<CambioClaveResponse>
+
+    @POST("api/insertar-info-dispositivo")
+    suspend fun insertarInfoDspositivo(@Body request: DataDispositivoRequest): Response<DispositivoResponse>
 }

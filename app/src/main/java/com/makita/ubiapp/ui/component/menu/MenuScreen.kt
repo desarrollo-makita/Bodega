@@ -1,5 +1,6 @@
 package com.makita.ubiapp.ui.dialogs
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,8 +23,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.makita.ubiapp.R
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Dataset
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.DoneOutline
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoveToInbox
+import androidx.compose.material.icons.filled.NewLabel
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextAlign
@@ -32,14 +40,15 @@ import androidx.compose.ui.text.style.TextAlign
 fun MenuScreen(
     nombreUsuario: String,
     area: String,
-    idUsuario: Int,
     vigencia: Long,
+    idUsuario: Int,
     token: String,
     navController: NavController
 ) {
     val scrollState = rememberScrollState()
     var showVigenciaDialog by remember { mutableStateOf(false) }
 
+    Log.d("*MAKITA" , "MenuScreen 01s $nombreUsuario ,$area , $vigencia,  $idUsuario")
     LaunchedEffect(vigencia) {
         if (vigencia <= 90) {
             showVigenciaDialog = true
@@ -137,7 +146,7 @@ fun MenuOptions(navController: NavController, nombreUsuario: String) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         MenuItem(
-            icon = Icons.Default.LocationOn,
+            icon = Icons.Default.Place,
             text = "Cambio Ubicación",
             onClick = { navController.navigate("ubicacion/$nombreUsuario") }
         )
@@ -147,8 +156,14 @@ fun MenuOptions(navController: NavController, nombreUsuario: String) {
             onClick = { /* Acción para Inventario */ }
         )
         MenuItem(
-            icon = Icons.Default.Warning,
+            icon = Icons.Default.Dataset,
             text = "Almacenamiento",
+            onClick = { /* Acción para Almacenamiento */ }
+        )
+
+        MenuItem(
+            icon = Icons.Default.Label,
+            text = "Etiquetado",
             onClick = { /* Acción para Almacenamiento */ }
         )
     }

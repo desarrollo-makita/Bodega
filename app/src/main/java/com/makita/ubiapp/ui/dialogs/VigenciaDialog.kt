@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+
 @Composable
 fun VigenciaDialog(vigencia:Long ,
                    idUsuario:Int,
@@ -21,6 +22,7 @@ fun VigenciaDialog(vigencia:Long ,
 
     // Estado para controlar la visibilidad de ChangePasswordDialog
     var showChangePasswordDialog by remember { mutableStateOf(false) }
+    Log.d("*MAKITA*", "VigenciaDialog : $vigencia , $idUsuario  ,$nombreUsuario, $token " )
 
     if (!showChangePasswordDialog) {
         AlertDialog(

@@ -90,7 +90,7 @@ fun UbicacionScreen(username: String) {
     val registrarUbicacionDao = db.registrarUbicacion()
 
     val emailLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
-        Log.d("*MAKITA*", "Resul envio Correo : $result")
+
         coroutineScope.launch {
             if (result.resultCode == Activity.RESULT_CANCELED) {
 
@@ -412,17 +412,10 @@ fun UbicacionScreen(username: String) {
                                                     ?: "" // Obtener tipoItem de la primera respuesta
                                             )
 
-                                            Log.d(
-                                                "*MAKITA*",
-                                                "requestTRegistro : $requestRegistro "
-                                            )
-
                                             val responseRegistroUbi =
                                                 registrarUbicacionDao.registraUbicacion(
                                                     requestRegistro
                                                 )
-                                            Log.d("*MAKITA*", "Se registran datos en sqlite : $responseRegistroUbi")
-
 
                                             successMessage = "Ubicación actualizada exitosamente"
                                             nuevaUbicacion =
