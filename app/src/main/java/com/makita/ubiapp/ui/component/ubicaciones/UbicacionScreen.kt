@@ -1,9 +1,11 @@
 package com.makita.ubiapp.ui.component.ubicaciones
 
-import android.app.Activity
+
+import android.app.Activity.RESULT_CANCELED
 import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,9 +40,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
 import com.makita.ubiapp.ActualizaUbicacionRequest
+import com.makita.ubiapp.RegistraBitacoraRequest
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.UbicacionResponse
 import com.makita.ubiapp.ui.component.database.AppDatabase
@@ -64,6 +69,8 @@ val TextFieldValueSaver: Saver<TextFieldValue, String> = Saver(
 @Composable
 fun UbicacionScreen(username: String) {
 
+    lateinit var    emailLauncher: ActivityResultLauncher<Intent>
+
     // Declaraciones de variables mutable
     val apiService = RetrofitClient.apiService
     var text by rememberSaveable(stateSaver = TextFieldValueSaver) { mutableStateOf(TextFieldValue()) }
@@ -82,6 +89,7 @@ fun UbicacionScreen(username: String) {
     var showContinuarProcesoButton by rememberSaveable { mutableStateOf(false) }
     var count by rememberSaveable { mutableIntStateOf(0) }
 
+
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -89,22 +97,16 @@ fun UbicacionScreen(username: String) {
     // base de datos en memoria
     val registrarUbicacionDao = db.registrarUbicacion()
 
-    val emailLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
+    emailLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()) { result ->
+        Log.d("*MAKITA*", "Resultado de envío de correo: $result")
+        if (result.resultCode == RESULT_CANCELED) {
+            Log.d("*MAKITA*", "Correo enviado exitosamente")
 
-        coroutineScope.launch {
-            if (result.resultCode == Activity.RESULT_CANCELED) {
-
-                registrarUbicacionDao.deleteAllData()
-                Log.d("*MAKITA*", "Datos borrados y enviados por correo.")
-                successMail = "Datos enviados por correo exitosamente."
-
-            } else {
-                Log.e("*MAKITA*", "Error al enviar el correo.")
-                errorState = "Error al enviar el correo."
-            }
+            clearRequested = true
         }
-
     }
+
 
 
     LaunchedEffect(Unit) {
@@ -412,6 +414,18 @@ fun UbicacionScreen(username: String) {
                                                     ?: "" // Obtener tipoItem de la primera respuesta
                                             )
 
+                                            val requestRegistroBitacora = RegistraBitacoraRequest(
+                                                usuario = username,
+                                                fechaCambio = formatTimestamp(System.currentTimeMillis()),
+                                                item = ubicacion.item,
+                                                ubicacionAntigua = ubicacion.Ubicacion,
+                                                nuevaUbicacion = nuevaUbicacion.text,
+                                                tipoItem = response.firstOrNull()?.tipoItem
+                                                    ?: "" // Obtener tipoItem de la primera respuesta
+                                            )
+
+                                            apiService.insertaBitacoraUbicacion(requestRegistroBitacora)
+
                                             val responseRegistroUbi =
                                                 registrarUbicacionDao.registraUbicacion(
                                                     requestRegistro
@@ -451,7 +465,7 @@ fun UbicacionScreen(username: String) {
 
         // funcion boton limpiar
         if (clearRequested) {
-            Log.d("*MAKITA*", "entro al if $clearRequested")
+
             text = TextFieldValue("")
             response = emptyList()
             clearRequested = false
@@ -500,7 +514,7 @@ fun UbicacionScreen(username: String) {
                             containerColor = Color(0xFF00909E)  // GreenMakita
                         )
                     ) {
-                        Text("Terminar Proceso")
+                        Text("Terminar proceso")
 
                     }
                 }
@@ -513,8 +527,6 @@ fun UbicacionScreen(username: String) {
                             isTextFieldEnabled = true
                             clearRequested = true
                             focusRequester.requestFocus()
-
-                            Log.d("*MAKITA*", "PASA POR onclik $isTextFieldEnabled")
                         },
                         modifier = Modifier.padding(end = 7.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -532,7 +544,7 @@ fun UbicacionScreen(username: String) {
 
         Spacer(modifier = Modifier.height(16.dp))
         if (datos.isNotEmpty() && count == 0) {
-            Log.d("*MAKITA*", "PASA POR datos.isNotEmpty $isTextFieldEnabled")
+
             val cantidadRegistros = datos.size
             registrosMessage = "Dispositivo con $cantidadRegistros registros"
             isTextFieldEnabled = false
@@ -561,23 +573,17 @@ fun UbicacionScreen(username: String) {
                                         val emailIntent = Intent(Intent.ACTION_SEND).apply {
                                             type =
                                                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                            putExtra(
-                                                Intent.EXTRA_EMAIL,
-                                                arrayOf("jherrera@makita.cl")
-                                            ) // Reemplaza con el correo del destinatario
+                                            putExtra(Intent.EXTRA_EMAIL,arrayOf("jherrera@makita.cl")) // Reemplaza con el correo del destinatario
                                             putExtra(Intent.EXTRA_SUBJECT, "Registros de Ubicación")
-                                            putExtra(
-                                                Intent.EXTRA_TEXT,
-                                                "Adjunto encontrarás los registros de ubicación."
-                                            )
+                                            putExtra(Intent.EXTRA_TEXT,"Adjunto encontrarás los registros de Cambio de ubicación.")
                                             putExtra(Intent.EXTRA_STREAM, fileUri)
                                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         }
+
                                         emailLauncher.launch(emailIntent)
-
-
-                                        showDialog =
-                                            false  // Cerrar el modal después de enviar y borrar
+                                        // Considerar que el correo fue enviado
+                                        registrarUbicacionDao.deleteAllData() // Eliminar datos inmediatamente después de enviar
+                                        showDialog = false  // Cerrar el modal después de enviar y borrar
 
                                     } else {
                                         errorState = "Error al crear el archivo para el correo."
@@ -615,7 +621,5 @@ fun formatTimestamp(timestamp: Long): String {
     formatter.timeZone = TimeZone.getTimeZone("GMT-4") // Establece la zona horaria de Santiago de Chile
     return formatter.format(date)
 }
-
-
 
 

@@ -1,5 +1,7 @@
 package com.makita.ubiapp
 
+import android.os.Parcel
+import android.os.Parcelable
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -14,13 +16,52 @@ data class UbicacionResponse(
     var item: String,
     var tipoItem: String,
     var nuevaUbicacion: String
-)
+) : Parcelable {
+    constructor(parcel: Parcel) : this(
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.readString() ?: ""
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(Ubicacion)
+        parcel.writeString(descripcion)
+        parcel.writeString(item)
+        parcel.writeString(tipoItem)
+        parcel.writeString(nuevaUbicacion)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<UbicacionResponse> {
+        override fun createFromParcel(parcel: Parcel): UbicacionResponse {
+            return UbicacionResponse(parcel)
+        }
+
+        override fun newArray(size: Int): Array<UbicacionResponse?> {
+            return arrayOfNulls(size)
+        }
+    }
+}
 
 data class ActualizaUbicacionRequest(
     val nuevaUbicacion: String,
     val empresa: String,
     val item: String,
     val tipoItem: String
+)
+
+data class RegistraBitacoraRequest(
+    val usuario : String,
+    val item : String,
+    val fechaCambio : String,
+    val tipoItem : String,
+    val ubicacionAntigua : String,
+    val nuevaUbicacion : String
 )
 
 data class RegistroUbicacionRequest(
@@ -56,7 +97,8 @@ data class UserData(
     val menu: List<MenuItem>,
     val token: String,
     val vigencia: Long,
-    val recuperarClave: Int
+    val recuperarClave: Int,
+    val actividades: List<ActividadItem>
 )
 
 
@@ -66,6 +108,16 @@ data class MenuItem(
     val Ruta: String,
     val Icono: String,
     val Clase: String
+)
+
+data class ActividadItem(
+    val id: Int,
+    val nombreUsuario: String,
+    val usuarioId: String,
+    val nombreActividad: String,
+    val actividadId: String,
+    val ruta: String,
+    val icono: String
 )
 
 data class CambioClaveRequest(
@@ -127,6 +179,9 @@ interface ApiService {
 
     @PUT("api/actualiza-ubicacion")
     suspend fun actualizaUbicacion(@Body request: ActualizaUbicacionRequest): Response<Unit>
+
+    @PUT("api/insertar-registro-ubicacion")
+    suspend fun insertaBitacoraUbicacion(@Body request: RegistraBitacoraRequest): Response<Unit>
 
     @POST("api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>

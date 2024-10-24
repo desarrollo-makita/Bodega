@@ -53,6 +53,7 @@ android {
 dependencies {
     implementation(libs.androidx.datastore.core.android)
     implementation(libs.places)
+    implementation(libs.protolite.well.known.types)
 
     // Room
     val roomVersion = "2.6.1"

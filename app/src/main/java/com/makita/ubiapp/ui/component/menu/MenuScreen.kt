@@ -24,17 +24,15 @@ import androidx.navigation.NavController
 import com.makita.ubiapp.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dataset
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.DoneOutline
+import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.MoveToInbox
-import androidx.compose.material.icons.filled.NewLabel
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextAlign
+
+import com.makita.ubiapp.ActividadItem
+
 
 @Composable
 fun MenuScreen(
@@ -43,12 +41,22 @@ fun MenuScreen(
     vigencia: Long,
     idUsuario: Int,
     token: String,
+    actividades: List<ActividadItem>,
     navController: NavController
 ) {
+
+    Log.d("*MAKITA*" , "MenuScreen Iniciando composable MenuScreen")
+
+    Log.d("*MAKITA*" , "MenuScreen- inicio(nombreUsuario :) $nombreUsuario")
+    Log.d("*MAKITA*" , "MenuScreen- inicio(area :) $area|")
+    Log.d("*MAKITA*" , "MenuScreen- inicio(vigencia :) $vigencia")
+    Log.d("*MAKITA*" , "MenuScreen- inicio(idUsuario :) $idUsuario")
+    Log.d("*MAKITA*" , "MenuScreen- inicio(token :) $token")
+    Log.d("*MAKITA*" , "MenuScreen- inicio(actividades:) $actividades")
+
     val scrollState = rememberScrollState()
     var showVigenciaDialog by remember { mutableStateOf(false) }
 
-    Log.d("*MAKITA" , "MenuScreen 01s $nombreUsuario ,$area , $vigencia,  $idUsuario")
     LaunchedEffect(vigencia) {
         if (vigencia <= 90) {
             showVigenciaDialog = true
@@ -89,7 +97,7 @@ fun MenuScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             MenuHeader(nombreUsuario = nombreUsuario, area = area)
-            MenuOptions(navController = navController, nombreUsuario = nombreUsuario)
+            MenuOptions(navController = navController, nombreUsuario = nombreUsuario , actividades = actividades)
         }
     }
 }
@@ -129,7 +137,7 @@ fun MenuHeader(nombreUsuario: String, area: String) {
 }
 
 @Composable
-fun MenuOptions(navController: NavController, nombreUsuario: String) {
+fun MenuOptions(navController: NavController, nombreUsuario: String , actividades: List<ActividadItem>) {
     Text(
         text = "¿Qué deseas hacer?",
         fontSize = 22.sp,
@@ -145,27 +153,20 @@ fun MenuOptions(navController: NavController, nombreUsuario: String) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        MenuItem(
-            icon = Icons.Default.Place,
-            text = "Cambio Ubicación",
-            onClick = { navController.navigate("ubicacion/$nombreUsuario") }
-        )
-        MenuItem(
-            icon = Icons.Default.List,
-            text = "Inventario",
-            onClick = { /* Acción para Inventario */ }
-        )
-        MenuItem(
-            icon = Icons.Default.Dataset,
-            text = "Almacenamiento",
-            onClick = { /* Acción para Almacenamiento */ }
-        )
+        // Registramos la lista de actividades para verificar
+        Log.d("*MAKITA", "Actividades: $actividades")
 
-        MenuItem(
-            icon = Icons.Default.Label,
-            text = "Etiquetado",
-            onClick = { /* Acción para Almacenamiento */ }
-        )
+        // Usamos la lista de actividades para generar los elementos de menú
+        actividades.forEach { actividad ->
+            Log.d("*MAKITA", "actividad: ${actividad.ruta}")
+            MenuItem(
+                icon = getIconForActividad(actividad.nombreActividad), // Usamos la función de mapeo
+                text = actividad.nombreActividad, // Usamos el nombre de la actividad
+                onClick = {
+                    navController.navigate("${actividad.ruta}${nombreUsuario}") // O alguna acción relacionada
+                }
+            )
+        }
     }
 }
 
@@ -196,5 +197,15 @@ fun MenuItem(icon: ImageVector, text: String, onClick: () -> Unit) {
             fontWeight = FontWeight.Medium,
             modifier = Modifier.align(Alignment.CenterVertically)
         )
+    }
+}
+
+fun getIconForActividad(actividad: String): ImageVector {
+    return when (actividad) {
+        "Ubicacion" -> Icons.Default.Place
+        "Inventario" -> Icons.Default.List
+        "Almacenamiento" -> Icons.Default.Dataset
+        "Etiquetado" -> Icons.Default.Label
+        else -> Icons.Default.Help // Icono por defecto si no se encuentra una coincidencia
     }
 }

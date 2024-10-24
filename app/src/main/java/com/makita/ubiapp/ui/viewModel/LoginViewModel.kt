@@ -1,13 +1,14 @@
 package com.makita.ubiapp.ui.component.login
 
-import android.os.Build
+
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.makita.ubiapp.ActividadItem
 import com.makita.ubiapp.LoginRequest
 import com.makita.ubiapp.RetrofitClient
-import com.makita.ubiapp.UserData
+
 import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
@@ -16,28 +17,20 @@ class LoginViewModel : ViewModel() {
     var errorState = mutableStateOf<String?>(null)
     var isUsernameFocused = mutableStateOf(false)
     var isPasswordFocused = mutableStateOf(false)
-    val dispositivo = "${Build.MANUFACTURER} ${Build.MODEL}"
-    val sistemaOperativo = "Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"
 
-
-
-    fun login(onLoginSuccess: (String, String, Long, Int ,String , Int) -> Unit) {
+    fun login(onLoginSuccess: (String, String, Long, Int ,String , Int , List<ActividadItem>) -> Unit) {
         viewModelScope.launch {
             try {
                 val request = LoginRequest(nombreUsuario.value, clave.value)
                 val response = RetrofitClient.apiService.login(request)
+                Log.d("*MAKITA*", "LoginViewModel : $response")
                 if (response.isSuccessful) {
                     response.body()?.let { loginResponse ->
                         val userData = loginResponse.data
-                        Log.d("*MAKITA*", "NombreUsuario ${userData.NombreUsuario}")
-                        Log.d("*MAKITA*", "Area ${userData.Area}")
-                        Log.d("*MAKITA*", "vigencia ${userData.vigencia}")
-                        Log.d("*MAKITA*", "UsuarioID ${userData.UsuarioID}")
-                        Log.d("*MAKITA*", "token ${userData.token}")
-                        Log.d("*MAKITA*", "recuperarClave ${userData.recuperarClave}")
+
                         if (userData != null) {
 
-                            onLoginSuccess(userData.NombreUsuario, userData.Area, userData.vigencia, userData.UsuarioID , userData.token , userData.recuperarClave)
+                            onLoginSuccess(userData.NombreUsuario, userData.Area, userData.vigencia, userData.UsuarioID , userData.token , userData.recuperarClave , userData.actividades)
                         } else {
                             errorState.value = "Datos de usuario vacíos"
                         }
@@ -49,6 +42,7 @@ class LoginViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 errorState.value = "Error de conexión: ${e.message}"
+                Log.d("*MAKITA*" ,"ERROR : ${e.message}")
             }
         }
     }

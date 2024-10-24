@@ -40,10 +40,11 @@ import com.makita.ubiapp.R
 import com.makita.ubiapp.ui.dialogs.PasswordRecoveryDialog
 import com.makita.ubiapp.ui.theme.GreenMakita
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.makita.ubiapp.ActividadItem
 
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int) -> Unit) {
+fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int , List<ActividadItem>) -> Unit) {
 
     val loginViewModel: LoginViewModel = viewModel()
     val context = LocalContext.current
@@ -175,8 +176,8 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int) -> Uni
         Button(
             onClick = {
 
-                loginViewModel.login { username, area, vigencia, idUsuario,token , recuperarClave->
-                    onLoginSuccess(username, area, vigencia,idUsuario , token , recuperarClave)
+                loginViewModel.login { username, area, vigencia, idUsuario,token , recuperarClave , actividades->
+                    onLoginSuccess(username, area, vigencia,idUsuario , token , recuperarClave , actividades)
                 }
             },
             modifier = Modifier

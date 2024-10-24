@@ -42,16 +42,6 @@ object DeviceInfoUtil {
         val numeroSerie = informacionDispositivo["numero_serie"]
         val idAndroid = informacionDispositivo["id_android"]
 
-        // Imprimir todas las variables en el Log
-        Log.d("*MAKITA*", """
-            Información del dispositivo:
-            Usuario: $nombreUsuario
-            Modelo: $modelo
-            Fabricante: $fabricante
-            Sistema Operativo: $sistemaOperativo
-            Número de Serie: $numeroSerie
-            ID Android: $idAndroid
-        """.trimIndent())
 
         // Llamada a la API con Retrofit para registrar la información del dispositivo
         val dataDispositivo = DataDispositivo(

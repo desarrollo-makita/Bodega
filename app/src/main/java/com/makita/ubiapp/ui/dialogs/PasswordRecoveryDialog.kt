@@ -85,7 +85,6 @@ fun PasswordRecoveryDialog(onDismiss: () -> Unit) {
                             val response = apiService.recuperarPassword(request)
 
                             if (response.isSuccessful) {
-                                Log.d("*MAKITA", "RESPONSE: ${response.body()}")
 
                                 // Verificar si el cuerpo de la respuesta no es null
                                 val responseBody = response.body()
