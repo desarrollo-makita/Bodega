@@ -180,7 +180,7 @@ interface ApiService {
     @PUT("api/actualiza-ubicacion")
     suspend fun actualizaUbicacion(@Body request: ActualizaUbicacionRequest): Response<Unit>
 
-    @PUT("api/insertar-registro-ubicacion")
+    @POST("api/insertar-registro-ubicacion")
     suspend fun insertaBitacoraUbicacion(@Body request: RegistraBitacoraRequest): Response<Unit>
 
     @POST("api/login")

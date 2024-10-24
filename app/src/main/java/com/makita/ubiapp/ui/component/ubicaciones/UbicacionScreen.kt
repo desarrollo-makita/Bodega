@@ -60,6 +60,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import com.makita.ubiapp.ui.component.archivo.guardarDatosEnExcel
+import com.makita.ubiapp.ui.component.login.LoginScreen
 
 // conserva los datos cuando cambia de orientacion el dispositivo
 val TextFieldValueSaver: Saver<TextFieldValue, String> = Saver(
@@ -424,8 +425,9 @@ fun UbicacionScreen(username: String) {
                                                     ?: "" // Obtener tipoItem de la primera respuesta
                                             )
 
-                                            apiService.insertaBitacoraUbicacion(requestRegistroBitacora)
+                                            val bitacoraRegistroUbi = apiService.insertaBitacoraUbicacion(requestRegistroBitacora)
 
+                                            Log.d("*MAKITA*" , "BITACORAREGISTROUBI $bitacoraRegistroUbi")
                                             val responseRegistroUbi =
                                                 registrarUbicacionDao.registraUbicacion(
                                                     requestRegistro
@@ -617,7 +619,7 @@ fun UbicacionScreen(username: String) {
 
 fun formatTimestamp(timestamp: Long): String {
     val date = Date(timestamp)
-    val formatter = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+    val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     formatter.timeZone = TimeZone.getTimeZone("GMT-4") // Establece la zona horaria de Santiago de Chile
     return formatter.format(date)
 }
