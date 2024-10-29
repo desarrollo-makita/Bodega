@@ -68,7 +68,7 @@ fun CapturaSerieScreen() {
 
     LaunchedEffect(Unit) {
         try {
-
+            delay(1000)
             val response = RetrofitClient.apiService.obtenerPickinglist()
             if (response.isSuccessful && response.body() != null) {
                 pickingList = response.body()!!.data
@@ -79,6 +79,7 @@ fun CapturaSerieScreen() {
         } catch (e: Exception) {
             errorMessage = "Error de red: ${e.localizedMessage}"
         }finally {
+
             isLoading = false // Cambia el estado de loading a false al finalizar
         }
     }
@@ -119,8 +120,10 @@ fun CapturaSerieScreen() {
                         .padding(horizontal = 0.dp) // Menor margen
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
+
                     ) {
                         EscanearItemTextField(text = remember { mutableStateOf(folioText) })
                         BuscarButton()
@@ -130,11 +133,21 @@ fun CapturaSerieScreen() {
                 }
                 Spacer(modifier = Modifier.height(25.dp))
 
-                PickingListTable(pickingList)
+            if(isLoading){
+                LoadingIndicator()
+            }else{
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 30.dp) // Menor margen
+                ) {
+
+                    PickingListTable(pickingList)
+                }
+            }
 
                 Separar()
                 Footer()
-
             }
         }
 }
@@ -191,6 +204,8 @@ fun Separar(){
         modifier = Modifier
             .padding(vertical = 16.dp)
             .padding(10.dp)
+        ,
+
     )
 }
 
@@ -269,6 +284,7 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
                 modifier = Modifier
                     .fillMaxHeight(0.5f)
                     .padding(top = 8.dp)
+                    ,
             ) {
                 // Mostrar los elementos de la lista, omitiendo los primeros 9 elementos
                 items(pickingList?.drop(9) ?: emptyList()) { item ->
@@ -280,7 +296,8 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
                                 text = field(item),
                                 modifier = Modifier
                                     .width(130.dp) // Ajusta el ancho según sea necesario
-                                    .padding(horizontal = 5.dp),
+                                    .padding(horizontal = 5.dp)
+                                    .padding(vertical = 8.dp),
                                 fontSize = 12.sp,
                                 maxLines = 1, // Permite un máximo de 1 línea
                                 overflow = TextOverflow.Ellipsis // desbordamineto
@@ -345,7 +362,7 @@ fun LoadingIndicator() {
             .fillMaxSize()
             .wrapContentSize(Alignment.Center) // Centra el texto en la pantalla
     ) {
-        Text(text = "Cargando...", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(text = "Cargando...", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = GreenMakita)
     }
 }
 
