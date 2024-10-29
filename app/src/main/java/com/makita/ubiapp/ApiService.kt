@@ -2,6 +2,7 @@ package com.makita.ubiapp
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.google.type.DateTime
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -171,6 +172,28 @@ data class DispositivoResponse(
     val message : String
 )
 
+data class PickingItem(
+    val empresa: String,
+    val correlativo: Int,
+    val entidad: String,
+    val nombrecliente: String,
+    val Direccion: String,
+    val comuna: String,
+    val Ciudad: String,
+    val Bodorigen: String,
+    val Boddestino: String,
+    val DocumentoOrigen: String,
+    val CorrelativoOrigen: Int,
+    val glosa: String,
+    val totalItems: Int,
+    val Fecha: String
+)
+
+data class PickingResponse(
+    val status: Int,
+    val data: List<PickingItem>
+)
+
 interface ApiService {
 
     @GET("api/obtener-ubicacion/{ubicacion}")
@@ -201,4 +224,7 @@ interface ApiService {
 
     @POST("api/insertar-info-dispositivo")
     suspend fun insertarInfoDspositivo(@Body request: DataDispositivoRequest): Response<DispositivoResponse>
+
+    @GET("api/get-all-pickingList")
+    suspend fun obtenerPickinglist(): Response<PickingResponse>
 }

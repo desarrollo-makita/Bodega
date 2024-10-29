@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.makita.ubiapp.ui.component.login.LoginScreen
+import com.makita.ubiapp.ui.component.ubicaciones.CapturaSerieScreen
 import com.makita.ubiapp.ui.component.ubicaciones.UbicacionScreen
 import com.makita.ubiapp.ui.dialogs.MenuScreen
 import com.makita.ubiapp.ui.dialogs.ReplacePasswordDialog
@@ -149,6 +150,10 @@ class MainActivity : ComponentActivity() {
             composable("ubicacion/{username}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 UbicacionScreen(username = username )
+            }
+
+            composable("picking/") {
+                CapturaSerieScreen()
             }
 
         }

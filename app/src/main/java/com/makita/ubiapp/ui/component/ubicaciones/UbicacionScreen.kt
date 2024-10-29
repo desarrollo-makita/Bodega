@@ -1,12 +1,6 @@
 package com.makita.ubiapp.ui.component.ubicaciones
 
-
-import android.app.Activity.RESULT_CANCELED
-import android.content.Intent
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
@@ -40,10 +33,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import com.makita.ubiapp.ActualizaUbicacionRequest
 import com.makita.ubiapp.RegistraBitacoraRequest
 import com.makita.ubiapp.RetrofitClient
@@ -59,8 +50,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import com.makita.ubiapp.ui.component.archivo.guardarDatosEnExcel
-import com.makita.ubiapp.ui.component.login.LoginScreen
+
 
 // conserva los datos cuando cambia de orientacion el dispositivo
 val TextFieldValueSaver: Saver<TextFieldValue, String> = Saver(
@@ -70,9 +60,7 @@ val TextFieldValueSaver: Saver<TextFieldValue, String> = Saver(
 @Composable
 fun UbicacionScreen(username: String) {
 
-    lateinit var    emailLauncher: ActivityResultLauncher<Intent>
 
-    // Declaraciones de variables mutable
     val apiService = RetrofitClient.apiService
     var text by rememberSaveable(stateSaver = TextFieldValueSaver) { mutableStateOf(TextFieldValue()) }
     var nuevaUbicacion by rememberSaveable(stateSaver = TextFieldValueSaver) {mutableStateOf(TextFieldValue())}
@@ -82,51 +70,23 @@ fun UbicacionScreen(username: String) {
     var successMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var successMail by rememberSaveable { mutableStateOf<String?>(null) }
     var registrosMessage by rememberSaveable { mutableStateOf<String?>(null) }
-    var datos by rememberSaveable { mutableStateOf<List<RegistraUbicacionEntity>>(emptyList()) }
-    var showDialog by rememberSaveable { mutableStateOf(false) }
+
     var isTextFieldEnabled by rememberSaveable { mutableStateOf(true) }
     var showTerminateButton by rememberSaveable { mutableStateOf(false) }
     var showLimpiarButton by rememberSaveable { mutableStateOf(true) }
     var showContinuarProcesoButton by rememberSaveable { mutableStateOf(false) }
-    var count by rememberSaveable { mutableIntStateOf(0) }
-
 
     val focusRequester = remember { FocusRequester() }
-    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
+
     // base de datos en memoria
     val registrarUbicacionDao = db.registrarUbicacion()
 
-    emailLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()) { result ->
-        Log.d("*MAKITA*", "Resultado de envío de correo: $result")
-        if (result.resultCode == RESULT_CANCELED) {
-            Log.d("*MAKITA*", "Correo enviado exitosamente")
-
-            clearRequested = true
-        }
-    }
-
-
-
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            try {
-                datos = registrarUbicacionDao.getAllData()
-
-                Log.d("*MAKITA*", "la data de SQLite que se encuentra en la tabla : $datos")
-            } catch (e: Exception) {
-                Log.e("*MAKITA*", "Error fetching logins: ${e.message}")
-            }
-        }
-        focusRequester.requestFocus()
-
-    }
-
     LaunchedEffect(text) {
         if (text.text.isNotEmpty()) {
-            println("*MAKITA* Texto ingresado: ${text.text}")
+            Log.d("*MAKITA*", "[UbicacionScreen] Se ingresa texto : ${text.text}")
+
             try {
                 val ubicaciones = apiService.obtenerUbicacion(text.text)
                 response = ubicaciones
@@ -135,7 +95,7 @@ fun UbicacionScreen(username: String) {
                 errorState = null
                 successMessage = null
 
-                print("*MAKITA* response $response")
+                Log.d("*MAKITA*", "[UbicacionScreen] Respuesta servicio obtenerUbicacion  : ${text.text}")
 
                 if (ubicaciones.isEmpty()) {
                     // Mostrar mensaje de error si no se encontraron datos
@@ -167,222 +127,188 @@ fun UbicacionScreen(username: String) {
             )
             .padding(16.dp)
 
-    ) { Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // Agregar scroll aquí
-            .padding(16.dp)
-            .background(Color.White, shape = RoundedCornerShape(20.dp))
-            .padding(24.dp),
-
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            text,
-            { newTextFieldValue ->
-                val trimmedText = newTextFieldValue.text.take(20).trim()
-                text = TextFieldValue(text = trimmedText)
-
-
-            },
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-                .focusRequester(focusRequester),
-            label = { Text("Escanear Item" ,
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = GreenMakita
-            )) },
-            enabled = isTextFieldEnabled,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
-                unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
-                focusedLabelColor = GreenMakita,      // Color del label cuando el campo está enfocado
-                unfocusedLabelColor = GreenMakita,    // Color del label cuando no está enfocado
-                cursorColor = GreenMakita,            // Color del cursor en GreenMakita
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()) // Agregar scroll aquí
+                .padding(16.dp)
+                .background(Color.White, shape = RoundedCornerShape(20.dp))
+                .padding(24.dp),
 
-            ),
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription = "Clear text",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            clearRequested = true
-                            focusRequester.requestFocus()
-                        },
-                    tint = GreenMakita
-                )
-            },
-        )
+            ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Mostrar mensaje de registros
-        registrosMessage?.let { message ->
-            Text(
-                text = message,
-                color = Color.Red,
-                style = TextStyle(fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(vertical = 8.dp),
+            OutlinedTextField(
+                text,
+                { newTextFieldValue ->
+                    val trimmedText = newTextFieldValue.text.take(20).trim()
+                    text = TextFieldValue(text = trimmedText)
 
-                )
-        }
 
-        // Mostrar mensaje de éxito
-        successMessage?.let { message ->
-            LaunchedEffect(Unit) {
-                delay(4000) // Mostrar el mensaje por 2 segundos
-                successMessage = null // Limpiar el mensaje después de 2 segundos
-
-            }
-            Text(
-                text = message,
-                color = GreenMakita,
-                style = TextStyle(fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(vertical = 8.dp),
-
-                )
-        }
-
-        successMail?.let { message ->
-            LaunchedEffect(Unit) {
-                delay(4000) // Mostrar el mensaje por 2 segundos
-                successMail = null // Limpiar el mensaje después de 2 segundos
-                clearRequested = true
-            }
-            Text(
-                text = message,
-                color = GreenMakita,
-                style = TextStyle(fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(vertical = 8.dp),
-
-                )
-        }
-
-        // Mostrar mensaje de error si existe
-        errorState?.let { errorMessage ->
-            LaunchedEffect(Unit) {
-                delay(2000) // Mostrar el mensaje por 2 segundos
-                errorState = null // Limpiar el mensaje después de 2 segundos
-                text = TextFieldValue("") // Limpiar el campo de texto
-            }
-            Text(
-                text = errorMessage,
-                color = Color.Red,
-                style = TextStyle(fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-
-        if (response.isNotEmpty()) {
-            Divider(
-                color = Color.Gray,
-                thickness = 1.dp,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            response.forEach { ubicacion ->
-                Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = TextFieldValue(ubicacion.item),
-                            onValueChange = { newValue ->
-                                ubicacion.item = newValue.text
-                            },
-                            label = { Text("ITEM", fontWeight = FontWeight.Bold) },
-                            textStyle = TextStyle(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Red,
-                                fontSize = 20.sp
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenMakita,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = GreenMakita,
-                                cursorColor = GreenMakita,
-                            )
-                        )
-
-                        OutlinedTextField(
-                            value = TextFieldValue(ubicacion.Ubicacion.takeUnless { it.isEmpty() }
-                                ?: "Sin Ubicación"),
-                            onValueChange = { newValue ->
-                                ubicacion.Ubicacion = newValue.text
-                            },
-                            label = { Text("UBICACIÓN", fontWeight = FontWeight.Bold) },
-                            textStyle = TextStyle(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Red,
-                                fontSize = 20.sp
-                            ),
-                            modifier = Modifier.weight(1f),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenMakita,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = GreenMakita,
-                                cursorColor = GreenMakita,
-                            )
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = TextFieldValue(ubicacion.tipoItem),
-                        onValueChange = { newValue ->
-                            ubicacion.tipoItem = newValue.text
-                        },
-                        label = { Text("TIPO ITEM", fontWeight = FontWeight.Bold) },
-                        textStyle = TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Red,
-                            fontSize = 20.sp
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = GreenMakita,
-                            unfocusedBorderColor = Color.Gray,
-                            focusedLabelColor = GreenMakita,
-                            cursorColor = GreenMakita,
-                        )
-                    )
-
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .focusRequester(focusRequester),
+                label = {
                     Text(
-                        text = buildAnnotatedString {
-                            pushStyle(
-                                style = SpanStyle(fontWeight = FontWeight.Bold)
-                            )
-                            append("Descripción:")
-                            pop()
-                            append(" ${ubicacion.descripcion}")
-                        },
-                        modifier = Modifier.padding(top = 8.dp)
+                        "Escanear Item",
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GreenMakita
+                        )
                     )
+                },
+                enabled = isTextFieldEnabled,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
+                    unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
+                    focusedLabelColor = GreenMakita,      // Color del label cuando el campo está enfocado
+                    unfocusedLabelColor = GreenMakita,    // Color del label cuando no está enfocado
+                    cursorColor = GreenMakita,            // Color del cursor en GreenMakita
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    )
-                    {
-                        OutlinedTextField(
-                            value = nuevaUbicacion,
-                            onValueChange = { newValue ->
-                                nuevaUbicacion = newValue.copy(text = newValue.text.uppercase())
+                ),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Clear text",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                clearRequested = true
+                                focusRequester.requestFocus()
                             },
-                            label = { Text("NUEVA UBICACIÓN", fontWeight = FontWeight.Bold) },
+                        tint = GreenMakita
+                    )
+                },
+            )
+
+            // Mostrar mensaje de registros
+            registrosMessage?.let { message ->
+                Text(
+                    text = message,
+                    color = Color.Red,
+                    style = TextStyle(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(vertical = 8.dp),
+
+                    )
+            }
+
+            // Mostrar mensaje de éxito
+            successMessage?.let { message ->
+                LaunchedEffect(Unit) {
+                    delay(4000) // Mostrar el mensaje por 2 segundos
+                    successMessage = null // Limpiar el mensaje después de 2 segundos
+
+                }
+                Text(
+                    text = message,
+                    color = GreenMakita,
+                    style = TextStyle(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(vertical = 8.dp),
+
+                    )
+            }
+
+            successMail?.let { message ->
+                LaunchedEffect(Unit) {
+                    delay(4000) // Mostrar el mensaje por 2 segundos
+                    successMail = null // Limpiar el mensaje después de 2 segundos
+                    clearRequested = true
+                }
+                Text(
+                    text = message,
+                    color = GreenMakita,
+                    style = TextStyle(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(vertical = 8.dp),
+
+                    )
+            }
+
+            // Mostrar mensaje de error si existe
+            errorState?.let { errorMessage ->
+                LaunchedEffect(Unit) {
+                    delay(2000) // Mostrar el mensaje por 2 segundos
+                    errorState = null // Limpiar el mensaje después de 2 segundos
+                    text = TextFieldValue("") // Limpiar el campo de texto
+                }
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    style = TextStyle(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
+            if (response.isNotEmpty()) {
+                Divider(
+                    color = Color.Gray,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                response.forEach { ubicacion ->
+                    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = TextFieldValue(ubicacion.item),
+                                onValueChange = { newValue ->
+                                    ubicacion.item = newValue.text
+                                },
+                                label = { Text("ITEM", fontWeight = FontWeight.Bold) },
+                                textStyle = TextStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Red,
+                                    fontSize = 20.sp
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = GreenMakita,
+                                    unfocusedBorderColor = Color.Gray,
+                                    focusedLabelColor = GreenMakita,
+                                    cursorColor = GreenMakita,
+                                )
+                            )
+
+                            OutlinedTextField(
+                                value = TextFieldValue(ubicacion.Ubicacion.takeUnless { it.isEmpty() }
+                                    ?: "Sin Ubicación"),
+                                onValueChange = { newValue ->
+                                    ubicacion.Ubicacion = newValue.text
+                                },
+                                label = { Text("UBICACIÓN", fontWeight = FontWeight.Bold) },
+                                textStyle = TextStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Red,
+                                    fontSize = 20.sp
+                                ),
+                                modifier = Modifier.weight(1f),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = GreenMakita,
+                                    unfocusedBorderColor = Color.Gray,
+                                    focusedLabelColor = GreenMakita,
+                                    cursorColor = GreenMakita,
+                                )
+                            )
+                        }
+
+                        OutlinedTextField(
+                            value = TextFieldValue(ubicacion.tipoItem),
+                            onValueChange = { newValue ->
+                                ubicacion.tipoItem = newValue.text
+                            },
+                            label = { Text("TIPO ITEM", fontWeight = FontWeight.Bold) },
                             textStyle = TextStyle(
-                                fontWeight = FontWeight.Bold, color = Color.Red, fontSize = 20.sp
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Red,
+                                fontSize = 20.sp
                             ),
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp),
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = GreenMakita,
                                 unfocusedBorderColor = Color.Gray,
@@ -391,228 +317,172 @@ fun UbicacionScreen(username: String) {
                             )
                         )
 
-                        Button(
-                            onClick = {
-                                if (nuevaUbicacion.text.isNotEmpty()) {
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        try {
-                                            val request = ActualizaUbicacionRequest(
-                                                nuevaUbicacion = nuevaUbicacion.text,
-                                                empresa = "Makita",
-                                                item = text.text,
-                                                tipoItem = response.firstOrNull()?.tipoItem
-                                                    ?: "" // Obtener tipoItem de la primera respuesta
-                                            )
-                                            apiService.actualizaUbicacion(request)
+                        Text(
+                            text = buildAnnotatedString {
+                                pushStyle(
+                                    style = SpanStyle(fontWeight = FontWeight.Bold)
+                                )
+                                append("Descripción:")
+                                pop()
+                                append(" ${ubicacion.descripcion}")
+                            },
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
 
-                                            val requestRegistro = RegistraUbicacionEntity(
-                                                username = username,
-                                                timestamp = formatTimestamp(System.currentTimeMillis()),
-                                                item = ubicacion.item,
-                                                ubicacionAntigua = ubicacion.Ubicacion,
-                                                nuevaUbicacion = nuevaUbicacion.text,
-                                                tipoItem = response.firstOrNull()?.tipoItem
-                                                    ?: "" // Obtener tipoItem de la primera respuesta
-                                            )
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                                            val requestRegistroBitacora = RegistraBitacoraRequest(
-                                                usuario = username,
-                                                fechaCambio = formatTimestamp(System.currentTimeMillis()),
-                                                item = ubicacion.item,
-                                                ubicacionAntigua = ubicacion.Ubicacion,
-                                                nuevaUbicacion = nuevaUbicacion.text,
-                                                tipoItem = response.firstOrNull()?.tipoItem
-                                                    ?: "" // Obtener tipoItem de la primera respuesta
-                                            )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        )
+                        {
+                            OutlinedTextField(
+                                value = nuevaUbicacion,
+                                onValueChange = { newValue ->
+                                    nuevaUbicacion = newValue.copy(text = newValue.text.uppercase())
+                                },
+                                label = { Text("NUEVA UBICACIÓN", fontWeight = FontWeight.Bold) },
+                                textStyle = TextStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Red,
+                                    fontSize = 20.sp
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = GreenMakita,
+                                    unfocusedBorderColor = Color.Gray,
+                                    focusedLabelColor = GreenMakita,
+                                    cursorColor = GreenMakita,
+                                )
+                            )
 
-                                            val bitacoraRegistroUbi = apiService.insertaBitacoraUbicacion(requestRegistroBitacora)
+                            Button(
+                                onClick = {
+                                    if (nuevaUbicacion.text.isNotEmpty()) {
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            try {
+                                                val request = ActualizaUbicacionRequest(
+                                                    nuevaUbicacion = nuevaUbicacion.text,
+                                                    empresa = "Makita",
+                                                    item = text.text,
+                                                    tipoItem = response.firstOrNull()?.tipoItem
+                                                        ?: "" // Obtener tipoItem de la primera respuesta
+                                                )
+                                                apiService.actualizaUbicacion(request)
 
-                                            Log.d("*MAKITA*" , "BITACORAREGISTROUBI $bitacoraRegistroUbi")
-                                            val responseRegistroUbi =
-                                                registrarUbicacionDao.registraUbicacion(
-                                                    requestRegistro
+                                                val requestRegistro = RegistraUbicacionEntity(
+                                                    username = username,
+                                                    timestamp = formatTimestamp(System.currentTimeMillis()),
+                                                    item = ubicacion.item,
+                                                    ubicacionAntigua = ubicacion.Ubicacion,
+                                                    nuevaUbicacion = nuevaUbicacion.text,
+                                                    tipoItem = response.firstOrNull()?.tipoItem
+                                                        ?: "" // Obtener tipoItem de la primera respuesta
                                                 )
 
-                                            successMessage = "Ubicación actualizada exitosamente"
-                                            nuevaUbicacion =
-                                                TextFieldValue("") // Limpiar el campo de nueva ubicación
-                                            response =
-                                                apiService.obtenerUbicacion(text.text) // Actualizar la respuesta después de guardar
-                                            showTerminateButton = true
-                                            showLimpiarButton = true
-                                            showContinuarProcesoButton = false
-                                        } catch (e: Exception) {
-                                            errorState =
-                                                "Error al actualizar ubicación: ${e.message}"
-                                        } finally {
-                                            focusRequester.requestFocus() // Solicitar foco en el campo de escanear item
+                                                val requestRegistroBitacora =
+                                                    RegistraBitacoraRequest(
+                                                        usuario = username,
+                                                        fechaCambio = formatTimestamp(System.currentTimeMillis()),
+                                                        item = ubicacion.item,
+                                                        ubicacionAntigua = ubicacion.Ubicacion,
+                                                        nuevaUbicacion = nuevaUbicacion.text,
+                                                        tipoItem = response.firstOrNull()?.tipoItem
+                                                            ?: "" // Obtener tipoItem de la primera respuesta
+                                                    )
+
+                                                val bitacoraRegistroUbi =
+                                                    apiService.insertaBitacoraUbicacion(
+                                                        requestRegistroBitacora
+                                                    )
+
+                                                Log.d(
+                                                    "*MAKITA*",
+                                                    "BITACORAREGISTROUBI $bitacoraRegistroUbi"
+                                                )
+                                                val responseRegistroUbi =
+                                                    registrarUbicacionDao.registraUbicacion(
+                                                        requestRegistro
+                                                    )
+
+                                                successMessage =
+                                                    "Ubicación actualizada exitosamente"
+                                                nuevaUbicacion =
+                                                    TextFieldValue("") // Limpiar el campo de nueva ubicación
+                                                response =
+                                                    apiService.obtenerUbicacion(text.text) // Actualizar la respuesta después de guardar
+                                                showTerminateButton = true
+                                                showLimpiarButton = true
+                                                showContinuarProcesoButton = false
+                                            } catch (e: Exception) {
+                                                errorState =
+                                                    "Error al actualizar ubicación: ${e.message}"
+                                            } finally {
+                                                focusRequester.requestFocus() // Solicitar foco en el campo de escanear item
+                                            }
                                         }
                                     }
-                                }
 
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = GreenMakita,
-                                contentColor = Color.White
-                            ),
-                            enabled = nuevaUbicacion.text.isNotEmpty()
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = GreenMakita,
+                                    contentColor = Color.White
+                                ),
+                                enabled = nuevaUbicacion.text.isNotEmpty()
 
-                        ) {
-                            Text(text = "Grabar")
+                            ) {
+                                Text(text = "Grabar")
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // funcion boton limpiar
-        if (clearRequested) {
+            // funcion boton limpiar
+            if (clearRequested) {
 
-            text = TextFieldValue("")
-            response = emptyList()
-            clearRequested = false
-            errorState = null
-            successMessage = null
-            showTerminateButton = false
-            showLimpiarButton = true
-            showContinuarProcesoButton = false
-            registrosMessage = null
-        }
-
-
-
-        Spacer(modifier = Modifier.height(16.dp))
-        if (response.isNotEmpty() || errorState != null || showTerminateButton) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                if (showLimpiarButton) {
-                    Button(
-                        onClick = {
-                            clearRequested = true
-                            focusRequester.requestFocus()
-                        },
-                        modifier = Modifier.padding(start = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00909E)  // GreenMakita
-                        )
-                    ) {
-                        Text("Limpiar")
-
-                    }
-                }
-
-                if (showTerminateButton) {
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                showDialog = true
-                            }
-
-                        },
-                        modifier = Modifier.padding(end = 7.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00909E)  // GreenMakita
-                        )
-                    ) {
-                        Text("Terminar proceso")
-
-                    }
-                }
-
-                if (showContinuarProcesoButton) {
-                    Button(
-                        onClick = {
-
-                            count = 1
-                            isTextFieldEnabled = true
-                            clearRequested = true
-                            focusRequester.requestFocus()
-                        },
-                        modifier = Modifier.padding(end = 7.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00909E)  // GreenMakita
-                        )
-                    ) {
-                        Text("Continuar Proceso")
-
-                    }
-                }
-
-
+                text = TextFieldValue("")
+                response = emptyList()
+                clearRequested = false
+                errorState = null
+                successMessage = null
+                showTerminateButton = false
+                showLimpiarButton = true
+                showContinuarProcesoButton = false
+                registrosMessage = null
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        if (datos.isNotEmpty() && count == 0) {
-
-            val cantidadRegistros = datos.size
-            registrosMessage = "Dispositivo con $cantidadRegistros registros"
-            isTextFieldEnabled = false
-            showTerminateButton = true // Mostrar el botón "Terminar Proceso"
-            showLimpiarButton = false
-            showContinuarProcesoButton = true
-
-        }
-    }}
 
 
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Confirmación de Borrado") },
-            text = { Text("¿Estás seguro de borrar la información y cerrar el proceso?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            try {
-                                val registros = registrarUbicacionDao.getAllData()
-                                if (registros.isNotEmpty()) {
-                                    val fileUri = guardarDatosEnExcel(context, registros)
-                                    if (fileUri != null) {
-                                        val emailIntent = Intent(Intent.ACTION_SEND).apply {
-                                            type =
-                                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                            putExtra(Intent.EXTRA_EMAIL,arrayOf("jherrera@makita.cl")) // Reemplaza con el correo del destinatario
-                                            putExtra(Intent.EXTRA_SUBJECT, "Registros de Ubicación")
-                                            putExtra(Intent.EXTRA_TEXT,"Adjunto encontrarás los registros de Cambio de ubicación.")
-                                            putExtra(Intent.EXTRA_STREAM, fileUri)
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
 
-                                        emailLauncher.launch(emailIntent)
-                                        // Considerar que el correo fue enviado
-                                        registrarUbicacionDao.deleteAllData() // Eliminar datos inmediatamente después de enviar
-                                        showDialog = false  // Cerrar el modal después de enviar y borrar
-
-                                    } else {
-                                        errorState = "Error al crear el archivo para el correo."
-                                        Log.e(
-                                            "*MAKITA*",
-                                            "Error al crear el archivo para el correo."
-                                        )
-                                    }
-                                } else {
-                                    Log.e("*MAKITA*", "No hay registros para enviar.")
-                                }
-                            } catch (e: Exception) {
-                                Log.e("*MAKITA*", "Error al procesar: ${e.message}")
-                            }
-                        }
-                    }
+            Spacer(modifier = Modifier.height(16.dp))
+            if (response.isNotEmpty() || errorState != null || showTerminateButton) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text("Sí")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showDialog = false }) {
-                    Text("No")
+                    if (showLimpiarButton) {
+                        Button(
+                            onClick = {
+                                clearRequested = true
+                                focusRequester.requestFocus()
+                            },
+                            modifier = Modifier.padding(start = 8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF00909E)  // GreenMakita
+                            )
+                        ) {
+                            Text("Limpiar")
+
+                        }
+                    }
+
                 }
             }
-        )
+        }
     }
+
 
 } // Fin de UbicacionScreen
 
@@ -620,7 +490,7 @@ fun UbicacionScreen(username: String) {
 fun formatTimestamp(timestamp: Long): String {
     val date = Date(timestamp)
     val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    formatter.timeZone = TimeZone.getTimeZone("GMT-4") // Establece la zona horaria de Santiago de Chile
+    formatter.timeZone = TimeZone.getTimeZone("America/Santiago") // Zona horaria de Chile con ajuste DST
     return formatter.format(date)
 }
 

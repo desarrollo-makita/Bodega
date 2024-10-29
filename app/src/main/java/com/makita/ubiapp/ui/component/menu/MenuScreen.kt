@@ -58,7 +58,7 @@ fun MenuScreen(
     var showVigenciaDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(vigencia) {
-        if (vigencia <= 90) {
+        if (vigencia <= 10) {
             showVigenciaDialog = true
         }
     }
@@ -163,7 +163,15 @@ fun MenuOptions(navController: NavController, nombreUsuario: String , actividade
                 icon = getIconForActividad(actividad.nombreActividad), // Usamos la función de mapeo
                 text = actividad.nombreActividad, // Usamos el nombre de la actividad
                 onClick = {
-                    navController.navigate("${actividad.ruta}${nombreUsuario}") // O alguna acción relacionada
+                    Log.d("*MAKITA", "actividad: ${actividad.ruta}")
+                    if(actividad.ruta == "ubicacion/"){
+                        navController.navigate("${actividad.ruta}${nombreUsuario}") // O alguna acción relacionada
+
+                    }else if(actividad.ruta == "picking/"){
+                        navController.navigate("${actividad.ruta}") // O alguna acción relacionada
+                    }
+
+
                 }
             )
         }

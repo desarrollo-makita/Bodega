@@ -54,6 +54,8 @@ dependencies {
     implementation(libs.androidx.datastore.core.android)
     implementation(libs.places)
     implementation(libs.protolite.well.known.types)
+//    implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.material3)
 
     // Room
     val roomVersion = "2.6.1"
@@ -76,7 +78,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
+
 
     // Retrofit para llamadas a APIs
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
