@@ -126,25 +126,25 @@ fun CapturaSerieScreen() {
 
                     ) {
                         EscanearItemTextField(text = remember { mutableStateOf(folioText) })
-                        BuscarButton()
+                        BuscarButton(isEnabled = !isLoading)
 
                     }
 
                 }
                 Spacer(modifier = Modifier.height(25.dp))
 
-            if(isLoading){
-                LoadingIndicator()
-            }else{
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 30.dp) // Menor margen
-                ) {
-
-                    PickingListTable(pickingList)
+                if(isLoading){
+                    LoadingIndicator()
+                }else{
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 30.dp) // Menor margen
+                    )
+                        {
+                            PickingListTable(pickingList)
+                        }
                 }
-            }
 
                 Separar()
                 Footer()
@@ -154,7 +154,7 @@ fun CapturaSerieScreen() {
 
 
 @Composable
-fun BuscarButton(){
+fun BuscarButton(isEnabled: Boolean) {
     var isButtonPressed by remember { mutableStateOf(false) }
     // Botón de búsqueda con animación
     val buttonColor by animateColorAsState(
@@ -166,19 +166,21 @@ fun BuscarButton(){
         animationSpec = tween(durationMillis = 300)
     )
     Button(
-        onClick = { isButtonPressed = !isButtonPressed },
+        onClick = {
+            isButtonPressed = !isButtonPressed
+            // Puedes agregar más lógica aquí para el manejo del botón
+        },
         modifier = Modifier
             .width(120.dp)
             .height(38.dp) // Ajuste de altura para coincidir con TextField
             .padding(horizontal = 8.dp)
             .padding(start = 10.dp),
-
         colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = buttonElevation)
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = buttonElevation),
+        enabled = isEnabled // Establece la habilitación del botón
     ) {
         Text("Buscar", color = Color.White)
     }
-
 }
 @Composable
 fun Titulo() {
