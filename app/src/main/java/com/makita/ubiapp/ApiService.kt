@@ -2,6 +2,7 @@ package com.makita.ubiapp
 
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.room.Query
 import com.google.type.DateTime
 import retrofit2.Response
 import retrofit2.http.Body
@@ -187,11 +188,16 @@ data class PickingItem(
     val glosa: String,
     val totalItems: Int,
     val Fecha: String
+
 )
 
 data class PickingResponse(
     val status: Int,
     val data: List<PickingItem>
+)
+data class PickingFolioResponse(
+    val status: Int,
+    val data: PickingItem
 )
 
 interface ApiService {
@@ -227,4 +233,7 @@ interface ApiService {
 
     @GET("api/get-all-pickingList")
     suspend fun obtenerPickinglist(): Response<PickingResponse>
+
+    @GET("api/get-picking-folio/{folio}")
+    suspend fun obtenerPickingFolio(@Path("folio") folio: String):Response <PickingFolioResponse>
 }

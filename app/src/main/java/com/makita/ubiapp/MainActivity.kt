@@ -153,7 +153,7 @@ class MainActivity : ComponentActivity() {
             }
 
             composable("picking/") {
-                CapturaSerieScreen()
+                CapturaSerieScreen(navController)
             }
 
         }

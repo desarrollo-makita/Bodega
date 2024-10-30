@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,10 +47,12 @@ import androidx.compose.ui.tooling.preview.Preview
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -59,12 +63,13 @@ val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
 )
 @Composable
-fun CapturaSerieScreen() {
+fun CapturaSerieScreen(navController: NavController) {
 
     var folioText by remember { mutableStateOf("") }
     var pickingList by remember { mutableStateOf<List<PickingItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
+
 
     LaunchedEffect(Unit) {
         try {
@@ -85,8 +90,7 @@ fun CapturaSerieScreen() {
     }
 
     // Fondo degradado
-    Box(
-        modifier = Modifier
+    Box(modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
@@ -96,87 +100,93 @@ fun CapturaSerieScreen() {
                     )
                 )
             )
-            .padding(10.dp),
-
-
-        ) {
-
+            .padding(10.dp))
+    {
         Column(
-                modifier = Modifier
+            modifier = Modifier
                     .fillMaxSize()
                     .padding(1.dp)
                     .background(Color.White, shape = RoundedCornerShape(30.dp)),
-                verticalArrangement = Arrangement.Top, // Coloca todo en la parte superior
-                horizontalAlignment = Alignment.CenterHorizontally // Centra horizontalmente
-
-
-
+            verticalArrangement = Arrangement.Top, // Coloca todo en la parte superior
+            horizontalAlignment = Alignment.CenterHorizontally // Centra horizontalmente
+        )
+        {
+            Titulo()
+            Separar()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 0.dp) // Menor margen
             ) {
-                Titulo()
-                Separar()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+
+                ) {
+                    EscanearItemTextField(text = folioText, onTextChange = { folioText = it })
+                    BuscarButton(isEnabled = !isLoading , folioValue = folioText)
+
+                }
+
+            }
+            Spacer(modifier = Modifier.height(25.dp))
+
+            if(isLoading){
+                LoadingIndicator()
+            }else{
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 0.dp) // Menor margen
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-
-                    ) {
-                        EscanearItemTextField(text = remember { mutableStateOf(folioText) })
-                        BuscarButton(isEnabled = !isLoading)
-
+                        .padding(start = 30.dp) // Menor margen
+                )
+                    {
+                        PickingListTable(pickingList)
                     }
-
-                }
-                Spacer(modifier = Modifier.height(25.dp))
-
-                if(isLoading){
-                    LoadingIndicator()
-                }else{
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 30.dp) // Menor margen
-                    )
-                        {
-                            PickingListTable(pickingList)
-                        }
-                }
-
-                Separar()
-                Footer()
             }
+
+            Separar()
+            Footer(navController)
         }
+    }
 }
 
 
 @Composable
-fun BuscarButton(isEnabled: Boolean) {
-    var isButtonPressed by remember { mutableStateOf(false) }
-    // Botón de búsqueda con animación
-    val buttonColor by animateColorAsState(
-        targetValue = if (isButtonPressed) Color(0xFF00796B) else Color(0xFF009688),
-        animationSpec = tween(durationMillis = 300)
-    )
-    val buttonElevation by animateDpAsState(
-        targetValue = if (isButtonPressed) 4.dp else 8.dp,
-        animationSpec = tween(durationMillis = 300)
-    )
+fun BuscarButton(isEnabled: Boolean , folioValue: String) {
+
+    Log.d("*MAKITA*", "Response data: ${folioValue}")
+    val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
     Button(
         onClick = {
-            isButtonPressed = !isButtonPressed
-            // Puedes agregar más lógica aquí para el manejo del botón
+
+            coroutineScope.launch {
+                try {
+                    val responseFolio = RetrofitClient.apiService.obtenerPickingFolio(folioValue)
+                    if (responseFolio.isSuccessful && responseFolio.body() != null) {
+                        // Handle successful response
+                        Log.d("*MAKITA*", "Response data: ${responseFolio.body()}")
+                    } else {
+                        // Handle API error
+                        Log.e("*MAKITA*", "Error: ${responseFolio} - ${responseFolio.code()}")
+                    }
+
+                }catch(e: Exception){
+
+                    Log.e("MAKITA", "Exception: ${e.localizedMessage}")
+                }
+            }
+
+
         },
         modifier = Modifier
             .width(120.dp)
             .height(38.dp) // Ajuste de altura para coincidir con TextField
             .padding(horizontal = 8.dp)
             .padding(start = 10.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = buttonElevation),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF00909E)  // GreenMakita
+        ),
         enabled = isEnabled // Establece la habilitación del botón
     ) {
         Text("Buscar", color = Color.White)
@@ -193,7 +203,7 @@ fun Titulo() {
             .height(70.dp) // Ajusta la altura a 40 dp (cambia según tus necesidades)
             .padding(top = 40.dp)
             .padding(start = 50.dp),
-        color = Color(0xFF009688), // Color verde makit
+        color = Color(0xFF00909E), // Color verde makit
 
     )
 }
@@ -212,30 +222,29 @@ fun Separar(){
 }
 
 @Composable
-fun EscanearItemTextField(text: MutableState<String>,  // Cambia a MutableState para poder modificarlo
-) {
+fun EscanearItemTextField(text: String, onTextChange: (String) -> Unit) {
     OutlinedTextField(
-        value = text.value.uppercase(),
+        value = text.uppercase(),  // Muestra el texto en mayúsculas
         onValueChange = { newText ->
-            // Actualiza el estado cuando el texto cambia
-            text.value = newText.take(20).trim() // Limita a 20 caracteres
+            // Filtra solo dígitos y toma hasta 10 caracteres
+            val value = newText.filter { it.isDigit() }.take(10)
+            onTextChange(value) // Actualiza el estado
         },
-        label = {
-            Text("Buscar Folio") // Agrega un label descriptivo
-        },
+        label = { Text("Buscar Folio") },  // Etiqueta del campo
         modifier = Modifier
-            .width(200.dp) // Ajusta el ancho a 200 dp (cambia según tus necesidades)
-            .height(60.dp) // Ajusta la altura a 40 dp (cambia según tus necesidades)
+            .width(200.dp)
+            .height(60.dp)
             .padding(start = 20.dp),
-        shape =  RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = GreenMakita,
-            unfocusedBorderColor = GreenMakita,
-            focusedLabelColor = GreenMakita,
-            unfocusedLabelColor = GreenMakita,
-            cursorColor = GreenMakita
-        )
-        )
+            focusedBorderColor = Color(0xFF00909E),
+            unfocusedBorderColor = Color(0xFF00909E),
+            focusedLabelColor = Color(0xFF00909E),
+            unfocusedLabelColor = Color(0xFF00909E),
+            cursorColor = Color(0xFF00909E)
+        ),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
 }
 
 
@@ -273,7 +282,7 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
                             .padding(horizontal = 5.dp)
                             .padding(vertical = 10.dp),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
+                        fontSize = 15.sp,
                         maxLines = 1,
                         color = GreenMakita,
 
@@ -314,43 +323,37 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
 }
 
 @Composable
-fun Footer() {
+fun Footer(navController: NavController) {
     var isButtonVolver by remember { mutableStateOf(false) }
     var isButtonActualizar by remember { mutableStateOf(false) }
 
     // Botón de búsqueda con animación
-    val buttonColor by animateColorAsState(
-        targetValue = if (isButtonVolver || isButtonActualizar) Color(0xFF00796B) else Color(0xFF009688),
-        animationSpec = tween(durationMillis = 300)
-    )
-    val buttonElevation by animateDpAsState(
-        targetValue = if (isButtonVolver || isButtonActualizar) 4.dp else 8.dp,
-        animationSpec = tween(durationMillis = 300)
-    )
 
     Row(modifier = Modifier.fillMaxWidth()) {
         Button(
-            onClick = { isButtonVolver = !isButtonVolver },
+            onClick = { navController.popBackStack() },
             modifier = Modifier
                 .weight(1f) // Este botón ocupará el espacio restante
                 .padding(horizontal = 8.dp)
-                .padding(start = 10.dp, end = 5.dp), // Ajuste de padding
+                .padding(start = 10.dp, end = 5.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF00909E)  // GreenMakita
+            )// Ajuste de padding
 
-            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = buttonElevation)
         ) {
             Text("Volver", color = Color.White)
         }
 
         Button(
-            onClick = { isButtonActualizar = !isButtonActualizar },
+            onClick = {  },
             modifier = Modifier
                 .weight(1f) // Este botón también ocupará el espacio restante
                 .padding(horizontal = 8.dp)
                 .padding(start = 5.dp, end = 10.dp), // Ajuste de padding
 
-            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = buttonElevation)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF00909E)  // GreenMakita
+            )
         ) {
             Text("Actualizar", color = Color.White)
         }
@@ -402,12 +405,6 @@ fun formatDate(isoDate: String): String {
 
 
 
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewCapturaSerieScreen() {
-    CapturaSerieScreen()
-}
 
 
 
