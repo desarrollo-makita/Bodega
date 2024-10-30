@@ -33,6 +33,7 @@ import androidx.navigation.NavController
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.ui.theme.GreenMakita
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -51,23 +52,51 @@ fun CapturaSerieScreen(navController: NavController) {
     var pickingList by remember { mutableStateOf<List<PickingItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
+    val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
 
-
-    LaunchedEffect(Unit) {
-        try {
-            delay(1000)
-            val response = RetrofitClient.apiService.obtenerPickinglist()
-            if (response.isSuccessful && response.body() != null) {
-                pickingList = response.body()!!.data
-                Log.d("*MAKITA*", "CapturaSerieScreen obtenerPickinglist ${pickingList}")
-            } else {
-                errorMessage = "Error al obtener los datos: ${response.code()}"
+    fun cargarTodaLaData() {
+        isLoading = true
+        coroutineScope.launch {
+            try {
+                delay(1000) // Simulación de espera
+                val response = RetrofitClient.apiService.obtenerPickinglist()
+                if (response.isSuccessful && response.body() != null) {
+                    pickingList = response.body()!!.data
+                    errorMessage = null
+                    Log.d("*MAKITA*", "CapturaSerieScreen obtenerPickinglist ${pickingList}")
+                } else {
+                    errorMessage = "Error al obtener los datos: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error de red: ${e.localizedMessage}"
+            } finally {
+                isLoading = false
             }
-        } catch (e: Exception) {
-            errorMessage = "Error de red: ${e.localizedMessage}"
-        }finally {
+        }
+    }
 
-            isLoading = false // Cambia el estado de loading a false al finalizar
+    // Llama a cargarTodaLaData al entrar a CapturaSerieScreen
+    LaunchedEffect(Unit) {
+        cargarTodaLaData()
+    }
+
+    val fetchPickingListByFolio: (String) -> Unit = { folioValue ->
+        Log.d("*MAKITA*" , "texto que voy ingresando : $folioValue ")
+        isLoading = true
+        coroutineScope.launch {
+            try {
+                val responseFolio = RetrofitClient.apiService.obtenerPickingFolio(folioValue)
+                if (responseFolio.isSuccessful && responseFolio.body() != null) {
+                    pickingList = responseFolio.body()!!.data
+                    errorMessage = null
+                } else {
+                    errorMessage = "No se encontró el folio proporcionado."
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error de red: ${e.localizedMessage}"
+            } finally {
+                isLoading = false
+            }
         }
     }
 
@@ -106,16 +135,18 @@ fun CapturaSerieScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
 
                 ) {
-                    EscanearItemTextField(text = folioText, onTextChange = { folioText = it })
-                    BuscarButton(isEnabled = !isLoading , folioValue = folioText){ error ->
-                        errorMessage = error // Actualiza el mensaje de error aquí
-                    }
+                    EscanearItemTextField(
+                        text = folioText,
+                        onTextChange = { folioText = it },
+                        onApiCall = fetchPickingListByFolio,
+                        onReloadData = {
+                            folioText=""
+                            cargarTodaLaData()
 
+                        }
+                    )
                 }
-
-
                 ErrorMessage(errorMessage)
-
             }
 
 
@@ -136,52 +167,16 @@ fun CapturaSerieScreen(navController: NavController) {
             }
 
             Separar()
-            Footer(navController)
+            Footer(navController, onActualizarClick = {
+                cargarTodaLaData()
+                folioText= ""
+            })
         }
     }
 }
 
 
-@Composable
-fun BuscarButton(isEnabled: Boolean , folioValue: String , onError: (String) -> Unit) {
 
-    Log.d("*MAKITA*", "Response data: ${folioValue}")
-    val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
-    Button(
-        onClick = {
-
-            coroutineScope.launch {
-                try {
-                    val responseFolio = RetrofitClient.apiService.obtenerPickingFolio(folioValue)
-                    if (responseFolio.isSuccessful && responseFolio.body() != null) {
-                        onError("")
-                        Log.d("*MAKITA*", "Response data: ${responseFolio.body()}")
-                    } else {
-                        onError("No se encontro folio proporcionado.")
-                        Log.e("*MAKITA*", "Error: ${responseFolio} - ${responseFolio.code()}")
-                    }
-
-                }catch(e: Exception){
-
-                    Log.e("MAKITA", "Exception: ${e.localizedMessage}")
-                }
-            }
-
-
-        },
-        modifier = Modifier
-            .width(120.dp)
-            .height(38.dp) // Ajuste de altura para coincidir con TextField
-            .padding(horizontal = 8.dp)
-            .padding(start = 10.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF00909E)  // GreenMakita
-        ),
-        enabled = isEnabled // Establece la habilitación del botón
-    ) {
-        Text("Buscar", color = Color.White)
-    }
-}
 @Composable
 fun Titulo() {
     Text(
@@ -212,15 +207,40 @@ fun Separar(){
 }
 
 @Composable
-fun EscanearItemTextField(text: String, onTextChange: (String) -> Unit) {
+fun EscanearItemTextField(
+    text: String,
+    onTextChange: (String) -> Unit,
+    onApiCall: (String) -> Unit,
+    onReloadData: () -> Unit) {
+
+    val coroutineScope = rememberCoroutineScope()
+    var debounceJob by remember { mutableStateOf<Job?>(null) }
+
+
     OutlinedTextField(
         value = text.uppercase(),  // Muestra el texto en mayúsculas
         onValueChange = { newText ->
-            // Filtra solo dígitos y toma hasta 10 caracteres
+
             val value = newText.filter { it.isDigit() }.take(10)
-            onTextChange(value) // Actualiza el estado
+            onTextChange(value)
+            debounceJob?.cancel()
+
+            debounceJob = coroutineScope.launch {
+                delay(500) // Tiempo de debounce (ajustable)
+
+                if (value.isEmpty()) {
+                    onReloadData() // Llama a la función para recargar los datos si está vacío
+                } else {
+                    debounceJob = coroutineScope.launch {
+                        delay(500) // Tiempo de debounce (ajustable)
+                        if (value.isNotEmpty()) {
+                            onApiCall(value) // Llama a la función que consulta la API
+                        }
+                    }
+                }
+            }// Actualiza el estado
         },
-        label = { Text("Buscar Folio") },  // Etiqueta del campo
+        label = {                                                                                                             Text("Buscar Folio") },  // Etiqueta del campo
         modifier = Modifier
             .width(200.dp)
             .height(60.dp)
@@ -234,6 +254,7 @@ fun EscanearItemTextField(text: String, onTextChange: (String) -> Unit) {
             cursorColor = Color(0xFF00909E)
         ),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+
     )
 }
 @Composable
@@ -242,12 +263,12 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
 
     // Definir las cabeceras y los campos que deseas mostrar
     val headers = listOf(
-        "Correlativo","Documento Origen", "Entidad", "Fecha Documento" , "Nombre Cliente"
+        "Folio","Documento Origen", "Entidad", "Fecha Documento" , "Nombre Cliente"
     )
 
     val fields = listOf(
 
-        { item: PickingItem -> item.correlativo.toString() },
+        { item: PickingItem -> item.CorrelativoOrigen.toString() },
         { item: PickingItem -> item.DocumentoOrigen ?: "Sin Documento" },
         { item: PickingItem -> item.entidad ?: "Sin Entidad" },
         { item: PickingItem -> formatDate(item.Fecha ?: "Sin Fecha") },
@@ -286,13 +307,14 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
                     ,
             ) {
                 // Mostrar los elementos de la lista, omitiendo los primeros 9 elementos
-                items(pickingList?.drop(9) ?: emptyList()) { item ->
+                items(pickingList ?: emptyList()) { item ->
                     // Fila que contiene los datos de cada item
                     Row(modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween) {
                         fields.forEach { field ->
                             Text(
                                 text = field(item),
+                                color = Color.Black,
                                 modifier = Modifier
                                     .width(130.dp) // Ajusta el ancho según sea necesario
                                     .padding(horizontal = 5.dp)
@@ -310,7 +332,7 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
     }
 }
 @Composable
-fun Footer(navController: NavController) {
+fun Footer(navController: NavController, onActualizarClick: () -> Unit) {
     var isButtonVolver by remember { mutableStateOf(false) }
     var isButtonActualizar by remember { mutableStateOf(false) }
 
@@ -332,7 +354,7 @@ fun Footer(navController: NavController) {
         }
 
         Button(
-            onClick = {  },
+            onClick = { onActualizarClick() },
             modifier = Modifier
                 .weight(1f) // Este botón también ocupará el espacio restante
                 .padding(horizontal = 8.dp)

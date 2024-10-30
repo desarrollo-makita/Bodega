@@ -235,5 +235,5 @@ interface ApiService {
     suspend fun obtenerPickinglist(): Response<PickingResponse>
 
     @GET("api/get-picking-folio/{folio}")
-    suspend fun obtenerPickingFolio(@Path("folio") folio: String):Response <PickingFolioResponse>
+    suspend fun obtenerPickingFolio(@Path("folio") folio: String):Response <PickingResponse>
 }
