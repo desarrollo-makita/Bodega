@@ -2,49 +2,31 @@ package com.makita.ubiapp.ui.component.ubicaciones
 
 
 import android.util.Log
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-
 import androidx.compose.foundation.background
-
 import androidx.compose.foundation.horizontalScroll
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
-
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-
 import androidx.compose.material3.Text
-
-
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Alignment
-
 import androidx.compose.ui.Modifier
-
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -125,12 +107,20 @@ fun CapturaSerieScreen(navController: NavController) {
 
                 ) {
                     EscanearItemTextField(text = folioText, onTextChange = { folioText = it })
-                    BuscarButton(isEnabled = !isLoading , folioValue = folioText)
+                    BuscarButton(isEnabled = !isLoading , folioValue = folioText){ error ->
+                        errorMessage = error // Actualiza el mensaje de error aquí
+                    }
 
                 }
 
+
+                ErrorMessage(errorMessage)
+
             }
+
+
             Spacer(modifier = Modifier.height(25.dp))
+
 
             if(isLoading){
                 LoadingIndicator()
@@ -153,7 +143,7 @@ fun CapturaSerieScreen(navController: NavController) {
 
 
 @Composable
-fun BuscarButton(isEnabled: Boolean , folioValue: String) {
+fun BuscarButton(isEnabled: Boolean , folioValue: String , onError: (String) -> Unit) {
 
     Log.d("*MAKITA*", "Response data: ${folioValue}")
     val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
@@ -164,10 +154,10 @@ fun BuscarButton(isEnabled: Boolean , folioValue: String) {
                 try {
                     val responseFolio = RetrofitClient.apiService.obtenerPickingFolio(folioValue)
                     if (responseFolio.isSuccessful && responseFolio.body() != null) {
-                        // Handle successful response
+                        onError("")
                         Log.d("*MAKITA*", "Response data: ${responseFolio.body()}")
                     } else {
-                        // Handle API error
+                        onError("No se encontro folio proporcionado.")
                         Log.e("*MAKITA*", "Error: ${responseFolio} - ${responseFolio.code()}")
                     }
 
@@ -246,8 +236,6 @@ fun EscanearItemTextField(text: String, onTextChange: (String) -> Unit) {
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
 }
-
-
 @Composable
 fun PickingListTable(pickingList: List<PickingItem>?) {
     Log.d("*MAKITA*", ": $pickingList")
@@ -321,7 +309,6 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
         }
     }
 }
-
 @Composable
 fun Footer(navController: NavController) {
     var isButtonVolver by remember { mutableStateOf(false) }
@@ -359,7 +346,6 @@ fun Footer(navController: NavController) {
         }
     }
 }
-
 @Composable
 fun LoadingIndicator() {
     Box(
@@ -368,6 +354,22 @@ fun LoadingIndicator() {
             .wrapContentSize(Alignment.Center) // Centra el texto en la pantalla
     ) {
         Text(text = "Cargando...", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = GreenMakita)
+    }
+}
+@Composable
+fun ErrorMessage(errorMessage: String?) {
+    if (errorMessage != null) {
+        Text(
+            text = errorMessage,
+            color = Color.Red,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), // Texto en negrita
+            modifier = Modifier
+                .wrapContentWidth()
+                .padding(start = 20.dp)
+                .padding(top = 8.dp),
+            maxLines = 1, // Limitar a una sola línea
+            overflow = TextOverflow.Ellipsis // Muestra "..." si el texto se desborda
+        )
     }
 }
 
