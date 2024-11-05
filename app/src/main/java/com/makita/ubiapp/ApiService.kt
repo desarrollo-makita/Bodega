@@ -175,7 +175,7 @@ data class DispositivoResponse(
 
 data class PickingItem(
     val empresa: String,
-    val correlativo: Int,
+        val correlativo: Int,
     val entidad: String,
     val nombrecliente: String,
     val Direccion: String,
@@ -186,7 +186,7 @@ data class PickingItem(
     val DocumentoOrigen: String,
     val CorrelativoOrigen: Int,
     val glosa: String,
-    val totalItems: Int,
+    val Total_Items: Int,
     val Fecha: String
 
 )
@@ -195,9 +195,22 @@ data class PickingResponse(
     val status: Int,
     val data: List<PickingItem>
 )
-data class PickingFolioResponse(
+
+data class PickingDetalleItem(
+    val linea: Int,
+    val item: String,
+    val Descripcion: String,
+    val Cantidad: Int,
+    val CantidadPedida: Int,
+    val TipoDocumento: String,
+    val Tipoitem: String,
+    val Unidad: String,
+    val Ubicacion: String
+)
+
+data class PickingDetalleResponse(
     val status: Int,
-    val data: PickingItem
+    val data: List<PickingDetalleItem>
 )
 
 interface ApiService {
@@ -236,4 +249,7 @@ interface ApiService {
 
     @GET("api/get-picking-folio/{folio}")
     suspend fun obtenerPickingFolio(@Path("folio") folio: String):Response <PickingResponse>
+
+    @GET("api/get-picking-correlativo-detalle/{correlativo}")
+    suspend fun obtenerPickingCorrelativoDetalle(@Path("correlativo") correlativo: String): Response<PickingDetalleResponse>
 }

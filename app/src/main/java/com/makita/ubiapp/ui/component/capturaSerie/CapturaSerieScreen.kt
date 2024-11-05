@@ -3,6 +3,7 @@ package com.makita.ubiapp.ui.component.ubicaciones
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,9 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.google.gson.Gson
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.ui.theme.GreenMakita
@@ -162,7 +166,7 @@ fun CapturaSerieScreen(navController: NavController) {
                         .padding(start = 30.dp) // Menor margen
                 )
                     {
-                        PickingListTable(pickingList)
+                        PickingListTable(navController, pickingList)
                     }
             }
 
@@ -174,9 +178,6 @@ fun CapturaSerieScreen(navController: NavController) {
         }
     }
 }
-
-
-
 @Composable
 fun Titulo() {
     Text(
@@ -257,29 +258,23 @@ fun EscanearItemTextField(
 
     )
 }
+
 @Composable
-fun PickingListTable(pickingList: List<PickingItem>?) {
+fun PickingListTable(navController: NavController, pickingList: List<PickingItem>?) {
     Log.d("*MAKITA*", ": $pickingList")
 
     // Definir las cabeceras y los campos que deseas mostrar
-    val headers = listOf(
-        "Folio","Documento Origen", "Entidad", "Fecha Documento" , "Nombre Cliente"
+    val headers = listOf("Folio", "Documento Origen", "Entidad", "Fecha Documento", "Nombre Cliente")
+    val fields = listOf<(PickingItem) -> String>(
+        { item -> item.CorrelativoOrigen.toString() },
+        { item -> item.DocumentoOrigen ?: "Sin Documento" },
+        { item -> item.entidad ?: "Sin Entidad" },
+        { item -> formatDate(item.Fecha ?: "Sin Fecha") },
+        { item -> item.nombrecliente ?: "Sin Nombre" }
     )
-
-    val fields = listOf(
-
-        { item: PickingItem -> item.CorrelativoOrigen.toString() },
-        { item: PickingItem -> item.DocumentoOrigen ?: "Sin Documento" },
-        { item: PickingItem -> item.entidad ?: "Sin Entidad" },
-        { item: PickingItem -> formatDate(item.Fecha ?: "Sin Fecha") },
-        { item: PickingItem -> item.nombrecliente ?: "Sin Nombre" },
-
-
-        )
 
     // Contenedor principal
     Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-        // Columna que contiene tanto las cabeceras como las filas
         Column {
             // Crear las cabeceras en una fila fija
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -293,8 +288,7 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
                         maxLines = 1,
-                        color = GreenMakita,
-
+                        color = GreenMakita
                     )
                 }
             }
@@ -304,41 +298,43 @@ fun PickingListTable(pickingList: List<PickingItem>?) {
                 modifier = Modifier
                     .fillMaxHeight(0.5f)
                     .padding(top = 8.dp)
-                    ,
             ) {
-                // Mostrar los elementos de la lista, omitiendo los primeros 9 elementos
                 items(pickingList ?: emptyList()) { item ->
-                    // Fila que contiene los datos de cada item
-                    Row(modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween) {
-                        fields.forEach { field ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        fields.forEachIndexed { index, field ->
+                            val textColor = if (index == 0) Color.Blue else Color.Black
                             Text(
                                 text = field(item),
-                                color = Color.Black,
+                                color = textColor,
                                 modifier = Modifier
-                                    .width(130.dp) // Ajusta el ancho según sea necesario
+                                    .width(130.dp)
                                     .padding(horizontal = 5.dp)
-                                    .padding(vertical = 8.dp),
+                                    .padding(vertical = 8.dp)
+                                    .clickable {
+                                        if (index == 0) { // Solo permitir clics en el primer campo
+                                            val itemJson = Gson().toJson(item) // Serializa el objeto PickingItem a JSON
+                                            navController.navigate("cabecera-documento/$itemJson")
+                                        }
+                                    },
                                 fontSize = 12.sp,
-                                maxLines = 1, // Permite un máximo de 1 línea
-                                overflow = TextOverflow.Ellipsis // desbordamineto
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
-
                 }
             }
         }
     }
 }
+
+
 @Composable
 fun Footer(navController: NavController, onActualizarClick: () -> Unit) {
-    var isButtonVolver by remember { mutableStateOf(false) }
-    var isButtonActualizar by remember { mutableStateOf(false) }
-
-    // Botón de búsqueda con animación
-
-    Row(modifier = Modifier.fillMaxWidth()) {
+   Row(modifier = Modifier.fillMaxWidth()) {
         Button(
             onClick = { navController.popBackStack() },
             modifier = Modifier
@@ -400,6 +396,13 @@ fun formatDate(isoDate: String): String {
     val localDateTime = LocalDateTime.parse(isoDate, formatter)
     return localDateTime.toLocalDate().toString() // Solo devuelve la parte de la fecha
 }
+@Preview(showBackground = true)
+@Composable
+fun CapturaSerieScreenView() {
+    val navController = rememberNavController()
+    CapturaSerieScreen(navController = navController, )
+}
+
 
 
 

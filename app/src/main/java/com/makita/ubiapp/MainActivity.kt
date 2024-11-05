@@ -16,6 +16,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.google.gson.Gson
+import com.makita.ubiapp.ui.component.capturaSerie.CabeceraDocumentoScreen
+import com.makita.ubiapp.ui.component.capturaSerie.DetalleDocumentoScreen
 import com.makita.ubiapp.ui.component.login.LoginScreen
 import com.makita.ubiapp.ui.component.ubicaciones.CapturaSerieScreen
 import com.makita.ubiapp.ui.component.ubicaciones.UbicacionScreen
@@ -154,6 +156,32 @@ class MainActivity : ComponentActivity() {
 
             composable("picking/") {
                 CapturaSerieScreen(navController)
+            }
+
+
+            composable("cabecera-documento/{item}") { backStackEntry ->
+                val itemJson = backStackEntry.arguments?.getString("item")
+                if (itemJson != null) {
+                    val pickingItem = Gson().fromJson(itemJson, PickingItem::class.java)
+                    CabeceraDocumentoScreen(navController, pickingItem)
+                } else {
+                    // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
+                    Log.e("Navigation", "itemJson es null")
+                }
+            }
+
+            composable("detalle-documento/{item}") { backStackEntry ->
+                val itemJson = backStackEntry.arguments?.getString("item")
+
+                Log.d("*MAKITA*", "ITEMJSON*********************: $itemJson")
+
+                if (itemJson != null) {
+                    val pickingItem = Gson().fromJson(itemJson, PickingItem::class.java)
+                    DetalleDocumentoScreen(navController, pickingItem)
+                } else {
+                    // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
+                    Log.e("Navigation", "itemJson es null")
+                }
             }
 
         }
