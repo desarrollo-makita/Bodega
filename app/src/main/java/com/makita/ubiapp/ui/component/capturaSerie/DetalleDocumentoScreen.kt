@@ -14,16 +14,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -39,6 +43,8 @@ import androidx.compose.runtime.setValue
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -63,6 +69,7 @@ import com.makita.ubiapp.RetrofitClient
 
 
 import com.makita.ubiapp.ui.theme.GreenMakita
+import com.makita.ubiapp.ui.util.procesarTextoEscaneado
 
 import kotlinx.coroutines.launch
 
@@ -74,9 +81,11 @@ val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
 )
 @Composable
 fun DetalleDocumentoScreen(navController: NavController, item:PickingItem) {
+    Log.d("*MAKITA*" , "lOGOGOGOGOGO : $item")
     val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
     var pickingList by remember { mutableStateOf<List<PickingDetalleItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
 
 
     // Llama a cargarTodaLaData al entrar a CapturaSerieScreen
@@ -131,6 +140,8 @@ fun DetalleDocumentoScreen(navController: NavController, item:PickingItem) {
             ItemListTable(navController , pickingList)
             SepararDetalle()
             FooterProcesar(navController)
+            CapturaScanner(pickingList)
+
 
 
         }
@@ -289,8 +300,13 @@ fun ItemListTable(navController: NavController, pickingList: List<PickingDetalle
                     .padding(top = 8.dp)
             ) {
                 items(pickingList ?: emptyList()) { item ->
+
+                    val backgroundColor = if (item.Cantidad == item.CantidadPedida) GreenMakita else Color.Transparent
+
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(backgroundColor),
                         horizontalArrangement = Arrangement.Start
                     ) {
                         fields.forEachIndexed { index, field ->
@@ -314,50 +330,105 @@ fun ItemListTable(navController: NavController, pickingList: List<PickingDetalle
 }
 
 @Composable
-fun FooterProcesar(navController: NavController){
-
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Button(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier
-                .weight(1f) // Este botón ocupará el espacio restante
-                .padding(horizontal = 8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF00909E)  // GreenMakita
-            )// Ajuste de padding
-
-        ) {
-            Text("Salir", color = Color.White)
-        }
+fun FooterProcesar(navController: NavController) {
+    Column(modifier = Modifier.fillMaxWidth()) {
 
         Button(
-            onClick = {  },
+            onClick = { },
             modifier = Modifier
-                .weight(1f) // Este botón también ocupará el espacio restante
-                .padding(horizontal = 8.dp),// Ajuste de padding
-
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF00909E)  // GreenMakita
-            )
+                .fillMaxWidth()
+                .padding(4.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))
         ) {
+            Icon(Icons.Default.PlayArrow, contentDescription = "Procesar", tint = Color.White)
             Text("Procesar", color = Color.White)
         }
 
         Button(
-            onClick = {  },
+            onClick = { },
             modifier = Modifier
-                .wrapContentSize() // Este botón también ocupará el espacio restante
-                .padding(horizontal = 8.dp),
-
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF00909E)  // GreenMakita
-            )
+                .fillMaxWidth()
+                .padding(4.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))
         ) {
+            Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White)
             Text("Actualizar", color = Color.White)
         }
+
+        Button(
+            onClick = { navController.popBackStack() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))
+        ) {
+            Icon(Icons.Default.ExitToApp, contentDescription = "Salir", tint = Color.White)
+            Text("Salir", color = Color.White)
+        }
+    }
+}
+
+
+@Composable
+fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
+
+    val textoEntrada = remember { mutableStateOf(TextFieldValue("")) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 20.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp), // Espacio entre el Row y el OutlinedTextField
+                horizontalArrangement = Arrangement.SpaceBetween // Espacio entre elementos
+            ) {
+
+                // Nuevo OutlinedTextField para el cliente que ocupa el ancho completo
+                OutlinedTextField(
+                    value = textoEntrada.value,
+                    onValueChange = { newValue ->
+                        textoEntrada.value = newValue
+                        val resultado = procesarTextoEscaneado(newValue.text , pickingList)
+                        println("Resultado procesado: $resultado")
+                                    },
+                    label = { Text("Scanear!!", fontSize = 15.sp, color = Color(0xFF00909E)) },
+                    modifier = Modifier
+                        .fillMaxWidth() // Ocupa todo el ancho disponible
+                        .height(70.dp)
+                        .focusRequester(focusRequester), // Mantiene la altura consistente
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00909E),
+                        unfocusedBorderColor = Color(0xFF00909E),
+                        focusedLabelColor = Color(0xFF00909E),
+                        unfocusedLabelColor = Color(0xFF00909E),
+                        cursorColor = Color(0xFF00909E),
+                        disabledBorderColor = Color(0xFF00909E)
+                    ),
+                    textStyle = TextStyle(
+                        color = GreenMakita, // Cambia a tu color personalizado aquí
+                        fontSize = 16.sp // Ajusta el tamaño de la fuente según sea necesario
+                    ),
+
+                )
+            }
+        }
+    }
 }
+
 
 @Preview(showBackground = true)
 @Composable

@@ -154,7 +154,7 @@ fun PrimeraLineaTextField(item : PickingItem) {
             value = documentoOrigen.value,
             onValueChange = { newValue -> documentoOrigen.value = newValue },
             label = { Text(
-                "Documento" , fontSize = 15.sp, color = Color(0xFF00909E)) },
+                "Documento" , fontSize = 15.sp, color = Color(0xFF00909E), fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -179,7 +179,7 @@ fun PrimeraLineaTextField(item : PickingItem) {
         OutlinedTextField(
             value = nuemeroDocumento.value,
             onValueChange = { newValue -> nuemeroDocumento.value = newValue },
-            label = { Text("N° Documento" , fontSize = 15.sp ,color = Color(0xFF00909E)) }, // Label que dice "Documento"
+            label = { Text("N° Documento" , fontSize = 15.sp ,color = Color(0xFF00909E),fontWeight = FontWeight.Bold) }, // Label que dice "Documento"
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -218,7 +218,7 @@ fun SegundaLineaTextField(item : PickingItem) {
         OutlinedTextField(
             value = numeroFolio.value,
             onValueChange = { newValue -> numeroFolio.value = newValue },
-            label = { Text("N° Folio" , fontSize = 15.sp , color = Color(0xFF00909E)) },
+            label = { Text("N° Folio" , fontSize = 15.sp , color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -243,7 +243,7 @@ fun SegundaLineaTextField(item : PickingItem) {
         OutlinedTextField(
             value = rut.value,
             onValueChange = { newValue -> rut.value = newValue },
-            label = { Text("Rut" , fontSize = 15.sp , color = Color(0xFF00909E) ) }, // Label que dice "Documento"
+            label = { Text("Rut" , fontSize = 15.sp , color = Color(0xFF00909E),fontWeight = FontWeight.Bold ) }, // Label que dice "Documento"
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -281,7 +281,7 @@ fun EmpresaTextField(item : PickingItem) {
         OutlinedTextField(
             value = empresa.value,
             onValueChange = { newValue -> empresa.value = newValue },
-            label = { Text("Empresa" , fontSize = 15.sp , color = Color(0xFF00909E) ) },
+            label = { Text("Empresa" , fontSize = 15.sp , color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -317,7 +317,7 @@ fun ClienteTextField(item : PickingItem) {
         OutlinedTextField(
             value = cliente.value,
             onValueChange = { newValue -> cliente.value = newValue },
-            label = { Text("Cliente" , fontSize = 15.sp , color = Color(0xFF00909E) ) },
+            label = { Text("Cliente" , fontSize = 15.sp , color = Color(0xFF00909E),fontWeight = FontWeight.Bold ) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -355,7 +355,7 @@ fun DireccionTextField(item : PickingItem) {
         OutlinedTextField(
             value = direccion.value,
             onValueChange = { newValue -> direccion.value = newValue },
-            label = { Text("Direccion", fontSize = 15.sp, color = Color(0xFF00909E)) },
+            label = { Text("Direccion", fontSize = 15.sp, color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -387,7 +387,7 @@ fun DireccionTextField(item : PickingItem) {
         OutlinedTextField(
             value = comuna.value,
             onValueChange = { newValue -> comuna.value = newValue },
-            label = { Text("Comuna", fontSize = 15.sp, color = Color(0xFF00909E)) },
+            label = { Text("Comuna", fontSize = 15.sp, color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -411,7 +411,7 @@ fun DireccionTextField(item : PickingItem) {
         OutlinedTextField(
             value = ciudad.value,
             onValueChange = { newValue -> ciudad.value = newValue },
-            label = { Text("Ciudad", fontSize = 15.sp, color = Color(0xFF00909E)) },
+            label = { Text("Ciudad", fontSize = 15.sp, color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -451,7 +451,7 @@ fun BodegaTextField(item : PickingItem) {
         OutlinedTextField(
             value = bodegaOrigen.value,
             onValueChange = { newValue -> bodegaOrigen.value = newValue },
-            label = { Text("Bod. Origen", fontSize = 15.sp, color = Color(0xFF00909E)) },
+            label = { Text("Bod. Origen", fontSize = 15.sp, color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -476,7 +476,7 @@ fun BodegaTextField(item : PickingItem) {
         OutlinedTextField(
             value = bodegaDestino.value,
             onValueChange = { newValue -> bodegaDestino.value = newValue },
-            label = { Text("Bod. Destino", fontSize = 15.sp, color = Color(0xFF00909E)) },
+            label = { Text("Bod. Destino", fontSize = 15.sp, color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .weight(1f) // El campo de texto ocupa el espacio disponible
                 .padding(end = 8.dp)
@@ -517,7 +517,7 @@ fun TotalItemTextField(item : PickingItem) {
         OutlinedTextField(
             value = totalItems.value,
             onValueChange = { newValue -> totalItems.value = newValue },
-            label = { Text("Total Items", fontSize = 15.sp, color = Color(0xFF00909E)) },
+            label = { Text("Total Items", fontSize = 15.sp, color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
             modifier = Modifier
                 .wrapContentWidth() // Ajusta el ancho al contenido
                 .padding(end = 10.dp) // Ajusta el padding si es necesario
@@ -549,7 +549,7 @@ fun ReadOnlyTextArea(item: PickingItem) {
     OutlinedTextField(
         value = glosa.value,
         onValueChange = { newValue -> glosa.value = newValue },
-        label = { Text("Glosa", fontSize = 15.sp, color = Color(0xFF00909E)) },
+        label = { Text("Glosa", fontSize = 15.sp, color = Color(0xFF00909E),fontWeight = FontWeight.Bold) },
         modifier = Modifier
             .fillMaxWidth()
             .padding(10.dp)

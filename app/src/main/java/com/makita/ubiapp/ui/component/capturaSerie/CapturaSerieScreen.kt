@@ -241,7 +241,7 @@ fun EscanearItemTextField(
                 }
             }// Actualiza el estado
         },
-        label = {                                                                                                             Text("Buscar Folio") },  // Etiqueta del campo
+        label = {Text("Buscar Folio" , fontWeight = FontWeight.Bold) },  // Etiqueta del campo
         modifier = Modifier
             .width(200.dp)
             .height(60.dp)

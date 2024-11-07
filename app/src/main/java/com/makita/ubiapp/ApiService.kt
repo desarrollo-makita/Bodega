@@ -175,7 +175,7 @@ data class DispositivoResponse(
 
 data class PickingItem(
     val empresa: String,
-        val correlativo: Int,
+    val correlativo: Int,
     val entidad: String,
     val nombrecliente: String,
     val Direccion: String,
@@ -200,7 +200,7 @@ data class PickingDetalleItem(
     val linea: Int,
     val item: String,
     val Descripcion: String,
-    val Cantidad: Int,
+    var Cantidad: Int,
     val CantidadPedida: Int,
     val TipoDocumento: String,
     val Tipoitem: String,
