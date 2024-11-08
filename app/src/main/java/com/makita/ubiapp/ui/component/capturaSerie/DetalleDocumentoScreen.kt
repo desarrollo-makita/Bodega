@@ -8,6 +8,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.PlayArrow
@@ -80,75 +82,89 @@ val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
 )
 @Composable
-fun DetalleDocumentoScreen(navController: NavController, item:PickingItem) {
-    Log.d("*MAKITA*" , "lOGOGOGOGOGO : $item")
-    val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
+fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
+    val coroutineScope = rememberCoroutineScope()
     var pickingList by remember { mutableStateOf<List<PickingDetalleItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-
-
-    // Llama a cargarTodaLaData al entrar a CapturaSerieScreen
+    // Llamada a la API al iniciar
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
-
                 val response = RetrofitClient.apiService.obtenerPickingCorrelativoDetalle(item.correlativo.toString())
-
                 if (response.isSuccessful && response.body() != null) {
                     pickingList = response.body()!!.data
                     errorMessage = null
-                    Log.d("*MAKITA*", "DetalleDocumentoScreen  ${pickingList}")
                 } else {
                     errorMessage = "Error al obtener los datos: ${response.code()}"
                 }
             } catch (e: Exception) {
                 errorMessage = "Error de red: ${e.localizedMessage}"
-            } finally {
-
             }
         }
-
-
     }
 
-    // Fondo degradado
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF00909E),
-                    Color(0xFF80CBC4)
+    // Fondo degradado y diseño principal
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF00909E),
+                        Color(0xFF80CBC4)
+                    )
                 )
             )
-        )
-        .padding(8.dp))
-    {
-
-        Column(
+            .padding(8.dp), // Espaciado global
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Cabecera
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                // Agrega el scroll vertical
-                .background(Color.White, shape = RoundedCornerShape(10.dp)),
-            verticalArrangement = Arrangement.Top, // Coloca todo en la parte superior
-            horizontalAlignment = Alignment.CenterHorizontally // Centra horizontalmente
-        )
-        {
+                .fillMaxWidth()
+                .background(
+                    Color.White, shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                    )
+                )
+                .padding(16.dp)
+        ) {
             HeaderDetalle(item)
-            SepararDetalle()
-            ItemListTable(navController , pickingList)
-            SepararDetalle()
-            FooterProcesar(navController)
-            CapturaScanner(pickingList)
-
-
-
         }
 
-    }
+        // Tabla con datos desplazables
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f) // Ajusta el espacio restante
+                .background(Color.White)
+                .padding(0.dp)
+        ) {
 
+            ItemListTable(pickingList)
+        }
+
+        // Pie de página
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Color.White, shape = RoundedCornerShape(
+                        bottomEnd = 16.dp,
+                        bottomStart = 16.dp,
+                    )
+                )
+                .padding(16.dp)
+        ) {
+            SepararDetalle()
+            FooterProcesar(navController)
+        }
+    }
 }
+
 @Composable
 fun HeaderDetalle(item: PickingItem) {
     // Estado para el valor del texto
@@ -253,73 +269,77 @@ fun SepararDetalle(){
         color = Color(0xFFFF7F50),
         thickness = 2.dp,
         modifier = Modifier
-            .padding(vertical = 10.dp)
-            .padding(8.dp),
+            .padding(vertical = 1.dp)
+            .fillMaxWidth(),
     )
 }
 
 @Composable
-fun ItemListTable(navController: NavController, pickingList: List<PickingDetalleItem>?) {
-    Log.d("*MAKITA*", ": $pickingList")
-
-    // Definir las cabeceras y los campos que deseas mostrar
-    val headers = listOf("Item", "Descripcion", "Cantidad", "Catidad Pedido" , "Tipo Documento" , "Tipo item",  "Unidad","Ubicacion")
+fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
+    val headers = listOf("Item", "Descripcion", "Cantidad", "Cantidad Pedido", "Tipo Documento", "Tipo Item", "Unidad", "Ubicacion")
 
     val fields = listOf<(PickingDetalleItem) -> String>(
-        { item -> item.item?: "Sin item" },
-        { item -> item.Descripcion?: "Sin item" },
-        { item -> item.Cantidad.toString() ?: "Sin Caantidad" },
-        { item -> item.CantidadPedida.toString() ?: "sin cantidadPedida" },
+        { item -> item.item ?: "Sin item" },
+        { item -> item.Descripcion ?: "Sin descripción" },
+        { item -> item.Cantidad.toString() },
+        { item -> item.CantidadPedida.toString() },
         { item -> item.TipoDocumento ?: "Sin TipoDocumento" },
         { item -> item.Tipoitem ?: "Sin tipoItem" },
         { item -> item.Unidad ?: "Sin Unidad" },
-        { item -> item.Ubicacion ?: "Sin ubicacion" }
+        { item -> item.Ubicacion ?: "Sin ubicación" }
     )
-    Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+
+    // Contenedor desplazable horizontal y vertical
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
+            .horizontalScroll(rememberScrollState())
+    ) {
         Column {
-            // Crear las cabeceras en una fila fija
-            Row(modifier = Modifier.fillMaxWidth()) {
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, shape = RoundedCornerShape(5.dp))
+                    .padding(vertical = 5.dp)
+            ) {
                 headers.forEach { header ->
                     Text(
                         text = header,
                         modifier = Modifier
-                            .width(130.dp)
-                            .padding(horizontal = 5.dp)
-                            .padding(vertical = 10.dp),
+                            .width(100.dp)
+                            .padding(horizontal = 5.dp),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        maxLines = 2,
+                        fontSize = 14.sp,
                         color = GreenMakita
+                        
                     )
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
+            SepararDetalle()
+            // Cuerpo de la tabla
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
-                items(pickingList ?: emptyList()) { item ->
-
-                    val backgroundColor = if (item.Cantidad == item.CantidadPedida) GreenMakita else Color.Transparent
+                pickingList?.forEach { item ->
+                    val backgroundColor = if (item.Cantidad == item.CantidadPedida) GreenMakita.copy(alpha = 0.1f) else Color.Transparent
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(backgroundColor),
-                        horizontalArrangement = Arrangement.Start
+                            .background(backgroundColor)
+                            .padding(vertical = 5.dp)
                     ) {
-                        fields.forEachIndexed { index, field ->
-
+                        fields.forEach { field ->
                             Text(
                                 text = field(item),
                                 modifier = Modifier
-                                    .width(130.dp)
-                                    .padding(horizontal = 5.dp)
-                                    .padding(vertical = 8.dp),
+                                    .width(100.dp)
+                                    .padding(horizontal = 5.dp),
                                 fontSize = 12.sp,
-                                maxLines = 2,
-
+                                maxLines = 2
                             )
                         }
                     }
@@ -331,42 +351,48 @@ fun ItemListTable(navController: NavController, pickingList: List<PickingDetalle
 
 @Composable
 fun FooterProcesar(navController: NavController) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(5.dp), // Margen alrededor del Row
+        horizontalArrangement = Arrangement.SpaceEvenly // Espacio uniforme entre los botones
+    ) {
         Button(
             onClick = { },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))
+                .weight(1f) // Cada botón ocupa la misma proporción del espacio disponible
+                .padding(horizontal = 4.dp), // Espaciado entre los botones
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E)),
+            contentPadding = PaddingValues(8.dp) // Espaciado interno para mantener buen tamaño del ícono
         ) {
             Icon(Icons.Default.PlayArrow, contentDescription = "Procesar", tint = Color.White)
-            Text("Procesar", color = Color.White)
         }
 
         Button(
             onClick = { },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))
+                .weight(1f)
+                .padding(horizontal = 4.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E)),
+            contentPadding = PaddingValues(8.dp)
         ) {
-            Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White)
-            Text("Actualizar", color = Color.White)
+            Icon(Icons.Default.Refresh, contentDescription = "Actualizar", tint = Color.White)
         }
 
         Button(
             onClick = { navController.popBackStack() },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E))
+                .weight(1f)
+                .padding(horizontal = 4.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E)),
+            contentPadding = PaddingValues(8.dp)
         ) {
             Icon(Icons.Default.ExitToApp, contentDescription = "Salir", tint = Color.White)
-            Text("Salir", color = Color.White)
         }
     }
+
 }
+
 
 
 @Composable

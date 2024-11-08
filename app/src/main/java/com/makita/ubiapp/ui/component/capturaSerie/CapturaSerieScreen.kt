@@ -334,36 +334,48 @@ fun PickingListTable(navController: NavController, pickingList: List<PickingItem
 
 @Composable
 fun Footer(navController: NavController, onActualizarClick: () -> Unit) {
-   Row(modifier = Modifier.fillMaxWidth()) {
-        Button(
-            onClick = { navController.popBackStack() },
+    Box(
+        modifier = Modifier
+            .fillMaxSize() // Ocupa todo el tamaño de la pantalla
+            .padding(bottom = 16.dp) // Padding inferior para dar espacio a los botones
+    ) {
+        // Este contenido será el resto de la pantalla
+        // Aquí puedes agregar otros elementos, como listas o texto.
+        Spacer(modifier = Modifier.fillMaxSize()) // Para asegurarse que los botones no se muevan con el contenido
+
+        // Los botones flotantes
+        Row(
             modifier = Modifier
-                .weight(1f) // Este botón ocupará el espacio restante
-                .padding(horizontal = 8.dp)
-                .padding(start = 10.dp, end = 5.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF00909E)  // GreenMakita
-            )// Ajuste de padding
-
+                .align(Alignment.BottomCenter) // Alinea los botones en la parte inferior central
+                .padding(horizontal = 16.dp) // Padding horizontal general
         ) {
-            Text("Volver", color = Color.White)
-        }
+            Button(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier
+                    .weight(1f) // Ocupa el espacio disponible
+                    .padding(end = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00909E)  // Color de fondo del botón
+                )
+            ) {
+                Text("Volver", color = Color.White)
+            }
 
-        Button(
-            onClick = { onActualizarClick() },
-            modifier = Modifier
-                .weight(1f) // Este botón también ocupará el espacio restante
-                .padding(horizontal = 8.dp)
-                .padding(start = 5.dp, end = 10.dp), // Ajuste de padding
-
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF00909E)  // GreenMakita
-            )
-        ) {
-            Text("Actualizar", color = Color.White)
+            Button(
+                onClick = { onActualizarClick() },
+                modifier = Modifier
+                    .weight(1f) // Ocupa el espacio disponible
+                    .padding(start = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00909E)  // Color de fondo del botón
+                )
+            ) {
+                Text("Actualizar", color = Color.White)
+            }
         }
     }
 }
+
 @Composable
 fun LoadingIndicator() {
     Box(
