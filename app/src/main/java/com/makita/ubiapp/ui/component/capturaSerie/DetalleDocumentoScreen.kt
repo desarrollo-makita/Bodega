@@ -155,6 +155,7 @@ fun HeaderDetalle(item: PickingItem) {
     val correlativo = remember { mutableStateOf(TextFieldValue(item.correlativo.toString())) }
     val folio = remember { mutableStateOf(TextFieldValue(item.CorrelativoOrigen.toString())) }
     val cliente = remember { mutableStateOf(TextFieldValue(item.nombrecliente)) }
+    val cantidadItemInt = remember { mutableStateOf(item.Total_Items) }
 
     Box(
         modifier = Modifier
@@ -243,6 +244,12 @@ fun HeaderDetalle(item: PickingItem) {
                     fontSize = 16.sp // Ajusta el tamaño de la fuente según sea necesario
                 ),
                 enabled = false
+            )
+
+            Text(
+                "Se encontraron ${cantidadItemInt.value} items" ,
+                color = GreenMakita,
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
     }
@@ -377,8 +384,6 @@ fun FooterProcesar(navController: NavController) {
 
 }
 
-
-
 @Composable
 fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
     val textoEntrada = remember { mutableStateOf(TextFieldValue("")) }
@@ -392,7 +397,7 @@ fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
 
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
-            // Aquí puedes procesar el texto escaneado
+
             val resultado = procesarTextoEscaneado(textoEntrada.value.text, pickingList)
             println("Resultado procesado: $resultado")
 
@@ -450,8 +455,6 @@ fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
         }
     }
 }
-
-
 
 @Preview(showBackground = true)
 @Composable
