@@ -1,6 +1,5 @@
 package com.makita.ubiapp.ui.component.capturaSerie
 
-import android.util.Log
 import androidx.compose.foundation.background
 
 import androidx.compose.foundation.horizontalScroll
@@ -15,8 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,8 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.setValue
-
-
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -51,32 +46,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-
 import androidx.compose.ui.text.input.TextFieldValue
-
-
 import androidx.compose.ui.tooling.preview.Preview
-
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-
-
 import com.makita.ubiapp.PickingDetalleItem
-
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
-
-
-
 import com.makita.ubiapp.ui.theme.GreenMakita
 import com.makita.ubiapp.ui.util.procesarTextoEscaneado
-
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
-// conserva los datos cuando cambia de orientacion el dispositivo
 val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
     save = { it.text }, // Guarda solo el texto
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
@@ -161,6 +144,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
         ) {
             SepararDetalle()
             FooterProcesar(navController)
+            CapturaScanner(pickingList)
         }
     }
 }
@@ -397,12 +381,28 @@ fun FooterProcesar(navController: NavController) {
 
 @Composable
 fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
-
     val textoEntrada = remember { mutableStateOf(TextFieldValue("")) }
     val focusRequester = remember { FocusRequester() }
+    var textoEscaneado by remember { mutableStateOf("") }  // Variable para almacenar el texto escaneado
 
+    // Controlar el enfoque al iniciar
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+
+    LaunchedEffect(textoEntrada.value.text) {
+        if (textoEntrada.value.text.isNotEmpty()) {
+            // Aquí puedes procesar el texto escaneado
+            val resultado = procesarTextoEscaneado(textoEntrada.value.text, pickingList)
+            println("Resultado procesado: $resultado")
+
+            // Al escanear el texto, lo guardamos para mostrarlo durante 1 segundo
+            textoEscaneado = textoEntrada.value.text
+
+            // Esperamos 1 segundo antes de limpiar el texto
+            delay(1000) // Espera 1 segundo (1000 milisegundos)
+            textoEntrada.value = TextFieldValue("") // Limpia el texto
+        }
     }
 
     Box(
@@ -421,15 +421,12 @@ fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
                     .padding(bottom = 8.dp), // Espacio entre el Row y el OutlinedTextField
                 horizontalArrangement = Arrangement.SpaceBetween // Espacio entre elementos
             ) {
-
                 // Nuevo OutlinedTextField para el cliente que ocupa el ancho completo
                 OutlinedTextField(
                     value = textoEntrada.value,
                     onValueChange = { newValue ->
                         textoEntrada.value = newValue
-                        val resultado = procesarTextoEscaneado(newValue.text , pickingList)
-                        println("Resultado procesado: $resultado")
-                                    },
+                    },
                     label = { Text("Scanear!!", fontSize = 15.sp, color = Color(0xFF00909E)) },
                     modifier = Modifier
                         .fillMaxWidth() // Ocupa todo el ancho disponible
@@ -448,12 +445,12 @@ fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
                         color = GreenMakita, // Cambia a tu color personalizado aquí
                         fontSize = 16.sp // Ajusta el tamaño de la fuente según sea necesario
                     ),
-
                 )
             }
         }
     }
 }
+
 
 
 @Preview(showBackground = true)

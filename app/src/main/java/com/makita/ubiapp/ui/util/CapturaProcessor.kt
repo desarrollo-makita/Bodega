@@ -10,7 +10,7 @@ fun procesarTextoEscaneado(texto: String, pickingList: List<PickingDetalleItem>?
     Log.d("*MAKITA*", "Listado de item detalle $pickingList")
 
     val largoTexto = texto.length
-    //val item = texto.substring(0, 20).trim()
+    //val itemScanner = texto.substring(0, 20).trim()
     val itemScanner = "DUA301Z"
     val serieInicio = texto.substring(20,29).trim()
     val serieFinal = texto.substring(29,38).trim()
@@ -28,20 +28,10 @@ fun procesarTextoEscaneado(texto: String, pickingList: List<PickingDetalleItem>?
         if (itemDetalle != null) {
 
             itemDetalle.Cantidad += 1
+            return itemDetalle.Cantidad == itemDetalle.CantidadPedida
 
-            if (itemDetalle.Cantidad == itemDetalle.CantidadPedida) {
-
-                return true
-            } else {
-
-                return false
-            }
-        } else {
-            return false
         }
-    }else{
-        return false
     }
 
+    return false
 }
-
