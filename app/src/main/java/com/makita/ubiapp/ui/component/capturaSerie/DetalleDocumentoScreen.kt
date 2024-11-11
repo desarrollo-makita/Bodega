@@ -117,7 +117,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
                 )
                 .padding(16.dp)
         ) {
-            HeaderDetalle(item)
+            HeaderDetalle(item , errorMessage)
         }
 
         // Tabla con datos desplazables
@@ -146,13 +146,15 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
         ) {
             SepararDetalle()
             FooterProcesar(navController)
-            CapturaScanner(pickingList)
+            CapturaScanner(
+                pickingList,
+                { mensajeError -> errorMessage = mensajeError })
         }
     }
 }
 
 @Composable
-fun HeaderDetalle(item: PickingItem) {
+fun HeaderDetalle(item: PickingItem , errorMessage: String?) {
     // Estado para el valor del texto
     val correlativo = remember { mutableStateOf(TextFieldValue(item.correlativo.toString())) }
     val folio = remember { mutableStateOf(TextFieldValue(item.CorrelativoOrigen.toString())) }
@@ -253,6 +255,15 @@ fun HeaderDetalle(item: PickingItem) {
                 color = GreenMakita,
                 modifier = Modifier.padding(top = 8.dp)
             )
+
+            errorMessage?.let {
+                Text(
+                    it,
+                    color = Color.Red,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -387,7 +398,10 @@ fun FooterProcesar(navController: NavController) {
 }
 
 @Composable
-fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
+fun CapturaScanner(
+    pickingList: List<PickingDetalleItem>?,
+    onError: (String) -> Unit) {
+
     val textoEntrada = remember { mutableStateOf(TextFieldValue("")) }
     val focusRequester = remember { FocusRequester() }
     var textoEscaneado by remember { mutableStateOf("") }  // Variable para almacenar el texto escaneado
@@ -407,9 +421,17 @@ fun CapturaScanner(pickingList: List<PickingDetalleItem>?) {
             // Al escanear el texto, lo guardamos para mostrarlo durante 1 segundo
             textoEscaneado = textoEntrada.value.text
 
+            // Verificamos si el resultado es válido o no
+            if (!resultado ) {
+                // Si el item no se encuentra, llamamos al callback con un mensaje de error
+                println("Item no encontrado: ${textoEntrada.value.text}")
+                onError("Item no encontrado en la lista")
+            }
+
             // Esperamos 1 segundo antes de limpiar el texto
             delay(1000) // Espera 1 segundo (1000 milisegundos)
             textoEntrada.value = TextFieldValue("") // Limpia el texto
+            onError("")
         }
     }
 

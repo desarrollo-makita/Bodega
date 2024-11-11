@@ -3,7 +3,9 @@ package com.makita.ubiapp.ui.util
 import android.util.Log
 import com.makita.ubiapp.PickingDetalleItem
 
-fun procesarTextoEscaneado(texto: String, pickingList: List<PickingDetalleItem>?): Boolean {
+fun procesarTextoEscaneado(
+    texto: String,
+    pickingList: List<PickingDetalleItem>?): Boolean {
 
     Log.d("*MAKITA*", "Ingreso funcion procesarTextoEscaneado  $texto")
     Log.d("*MAKITA*", "El largo dle texto es ${texto.length}")
