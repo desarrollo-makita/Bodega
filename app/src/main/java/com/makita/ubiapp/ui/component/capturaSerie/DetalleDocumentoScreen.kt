@@ -415,21 +415,18 @@ fun CapturaScanner(
         Log.d("*MAKITA", "Texto Escaneado : ${textoEntrada.value.text}")
         if (textoEntrada.value.text.isNotEmpty()) {
 
-            val resultado = procesarTextoEscaneado(textoEntrada.value.text, pickingList)
+            val resultado = procesarTextoEscaneado(
+                textoEntrada.value.text,
+                pickingList?.toMutableList(),
+                onError
+            )
             println("Resultado procesado: $resultado")
 
             // Al escanear el texto, lo guardamos para mostrarlo durante 1 segundo
             textoEscaneado = textoEntrada.value.text
 
-            // Verificamos si el resultado es válido o no
-            if (!resultado ) {
-                // Si el item no se encuentra, llamamos al callback con un mensaje de error
-                println("Item no encontrado: ${textoEntrada.value.text}")
-                onError("Item no encontrado en la lista")
-            }
 
-            // Esperamos 1 segundo antes de limpiar el texto
-            delay(1000) // Espera 1 segundo (1000 milisegundos)
+            delay(1000)
             textoEntrada.value = TextFieldValue("") // Limpia el texto
             onError("")
         }
