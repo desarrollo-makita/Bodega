@@ -96,7 +96,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
 
     LaunchedEffect(errorMessage) {
         if (!errorMessage.isNullOrEmpty()) {
-            delay(1000) // Espera 1 segundo
+            delay(1500) // Espera 1 segundo
             errorMessage = null // Limpia el mensaje de error
         }
     }
@@ -442,17 +442,21 @@ fun CapturaScanner(
             if (itemDetalle == null) {
                 actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
             } else if(itemDetalle != null) {
-
-                val updatedList = pickingListState.value.map { item ->
-                    if (item.item == itemScannerType) {
-                        val nuevaCantidad = item.Cantidad + 1
-                        item.copy(Cantidad = nuevaCantidad)
-                    } else {
-                        item
+                if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
+                    actualizarMensajeError("El ítem ($itemScannerType) ya está completo. No se requiere más cantidad.")
+                }else{
+                    // Actualizar la lista con la nueva cantidad
+                    val updatedList = pickingListState.value.map { item ->
+                        if (item.item == itemScannerType) {
+                            val nuevaCantidad = item.Cantidad + 1
+                            item.copy(Cantidad = nuevaCantidad)
+                        } else {
+                            item
+                        }
                     }
+                    pickingListState.value = updatedList
+                    actualizarPickingList(updatedList)
                 }
-                pickingListState.value = updatedList
-                actualizarPickingList(updatedList)
             }
 
             delay(2000)
