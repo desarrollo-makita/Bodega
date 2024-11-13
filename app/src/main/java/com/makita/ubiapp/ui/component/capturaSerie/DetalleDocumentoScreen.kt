@@ -1,5 +1,6 @@
 package com.makita.ubiapp.ui.component.capturaSerie
 
+
 import android.util.Log
 import androidx.compose.foundation.background
 
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.width
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
@@ -49,6 +51,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.substring
+
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,8 +62,8 @@ import com.makita.ubiapp.PickingDetalleItem
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.ui.theme.GreenMakita
-import com.makita.ubiapp.ui.util.procesarTextoEscaneado
 import kotlinx.coroutines.delay
+
 import kotlinx.coroutines.launch
 
 val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
@@ -71,6 +75,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
     val coroutineScope = rememberCoroutineScope()
     var pickingList by remember { mutableStateOf<List<PickingDetalleItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
 
     // Llamada a la API al iniciar
     LaunchedEffect(Unit) {
@@ -86,6 +91,13 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
             } catch (e: Exception) {
                 errorMessage = "Error de red: ${e.localizedMessage}"
             }
+        }
+    }
+
+    LaunchedEffect(errorMessage) {
+        if (!errorMessage.isNullOrEmpty()) {
+            delay(1000) // Espera 1 segundo
+            errorMessage = null // Limpia el mensaje de error
         }
     }
 
@@ -146,9 +158,14 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
         ) {
             SepararDetalle()
             FooterProcesar(navController)
-            CapturaScanner(
-                pickingList,
-                { mensajeError -> errorMessage = mensajeError })
+            CapturaScanner(pickingList = pickingList,
+                actualizarPickingList = { nuevaLista ->
+                    pickingList = nuevaLista // Actualiza el estado global en el componente padre
+                },
+
+                ) {
+                nuevoMensaje -> errorMessage = nuevoMensaje // Actualiza el mensaje global
+            }
         }
     }
 }
@@ -255,6 +272,8 @@ fun HeaderDetalle(item: PickingItem , errorMessage: String?) {
                 color = GreenMakita,
                 modifier = Modifier.padding(top = 8.dp)
             )
+
+
 
             errorMessage?.let {
                 Text(
@@ -400,107 +419,94 @@ fun FooterProcesar(navController: NavController) {
 @Composable
 fun CapturaScanner(
     pickingList: List<PickingDetalleItem>?,
-    onError: (String) -> Unit) {
-
+    actualizarPickingList: (List<PickingDetalleItem>) -> Unit,
+    actualizarMensajeError: (String) -> Unit
+) {
     val textoEntrada = remember { mutableStateOf(TextFieldValue("")) }
+    var itemScannerType by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
-    var textoEscaneado by remember { mutableStateOf("") }  // Variable para almacenar el texto escaneado
+    val pickingListState = remember { mutableStateOf(pickingList ?: listOf()) }
 
-    // Controlar el enfoque al iniciar
+    // Solicitar foco una vez que el componente esté compuesto
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
 
     LaunchedEffect(textoEntrada.value.text) {
-        Log.d("*MAKITA", "Texto Escaneado : ${textoEntrada.value.text}")
         if (textoEntrada.value.text.isNotEmpty()) {
 
-            val resultado = procesarTextoEscaneado(
-                textoEntrada.value.text,
-                pickingList?.toMutableList(),
-                onError
-            )
-            println("Resultado procesado: $resultado")
+            itemScannerType = "DHP453X10"
+            //itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+            val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
 
-            // Al escanear el texto, lo guardamos para mostrarlo durante 1 segundo
-            textoEscaneado = textoEntrada.value.text
+            if (itemDetalle == null) {
+                actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
+            } else if(itemDetalle != null) {
 
-
-            delay(1000)
-            textoEntrada.value = TextFieldValue("") // Limpia el texto
-            onError("")
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 20.dp)
-            .alpha(0f)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp), // Espacio entre el Row y el OutlinedTextField
-                horizontalArrangement = Arrangement.SpaceBetween // Espacio entre elementos
-            ) {
-                // Nuevo OutlinedTextField para el cliente que ocupa el ancho completo
-                OutlinedTextField(
-                    value = textoEntrada.value,
-                    onValueChange = { newValue ->
-                        textoEntrada.value = newValue
-                    },
-                    label = { Text("Scanear!!", fontSize = 15.sp, color = Color(0xFF00909E)) },
-                    modifier = Modifier
-                        .fillMaxWidth() // Ocupa todo el ancho disponible
-                        .height(70.dp)
-                        .focusRequester(focusRequester), // Mantiene la altura consistente
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF00909E),
-                        unfocusedBorderColor = Color(0xFF00909E),
-                        focusedLabelColor = Color(0xFF00909E),
-                        unfocusedLabelColor = Color(0xFF00909E),
-                        cursorColor = Color(0xFF00909E),
-                        disabledBorderColor = Color(0xFF00909E)
-                    ),
-                    textStyle = TextStyle(
-                        color = GreenMakita,
-                        fontSize = 16.sp
-                    ),
-                )
+                val updatedList = pickingListState.value.map { item ->
+                    if (item.item == itemScannerType) {
+                        val nuevaCantidad = item.Cantidad + 1
+                        item.copy(Cantidad = nuevaCantidad)
+                    } else {
+                        item
+                    }
+                }
+                pickingListState.value = updatedList
+                actualizarPickingList(updatedList)
             }
+
+            delay(2000)
+            textoEntrada.value = TextFieldValue("")
+            itemScannerType= ""
         }
     }
+
+    LaunchedEffect(pickingList) {
+        pickingListState.value = pickingList ?: listOf()
+    }
+
+    Log.d("acacac", "asas")
+
+    // Campo de texto con foco inicial
+    BasicTextField(
+        value = textoEntrada.value,
+        onValueChange = { textoEntrada.value = it },
+        modifier = Modifier
+            .focusRequester(focusRequester) // Aplica el FocusRequester aquí
+            .fillMaxWidth()
+            .alpha(0f),
+        singleLine = true
+    )
 }
+
+fun procesaData(itemScannerType: String){
+
+}
+
+
 
 @Preview(showBackground = true)
 @Composable
 fun CapturaSerieScreenView() {
 
-    // Crea un objeto de ejemplo de PickingItem para pasar al composable
-    val exampleItem = PickingItem(
-        CorrelativoOrigen = 1,
-        DocumentoOrigen = "Doc123",
-        entidad = "16802012-0",
-        Fecha = "2024-11-04",
-        nombrecliente = "Cliente Ejemplo",
-        empresa = "makita",
-        Total_Items = 0 ,
-        glosa = "glosa este es un texto largo para probar el coportamiento de mis esoacios espacios espacios espacios espacoips ",
-        Ciudad = "Santiago",
-        comuna = "Lampa",
-        Bodorigen = "02",
-        correlativo = 123,
-        Direccion = "avenida el parque",
-        Boddestino = "15"
+// Crea un objeto de ejemplo de PickingItem para pasar al composable
+val exampleItem = PickingItem(
+    CorrelativoOrigen = 1,
+    DocumentoOrigen = "Doc123",
+    entidad = "16802012-0",
+    Fecha = "2024-11-04",
+    nombrecliente = "Cliente Ejemplo",
+    empresa = "makita",
+    Total_Items = 0 ,
+    glosa = "glosa este es un texto largo para probar el coportamiento de mis esoacios espacios espacios espacios espacoips ",
+    Ciudad = "Santiago",
+    comuna = "Lampa",
+    Bodorigen = "02",
+    correlativo = 123,
+    Direccion = "avenida el parque",
+    Boddestino = "15"
 
-    )
-    val navController = rememberNavController()
-    DetalleDocumentoScreen(navController = navController, item = exampleItem )
+)
+val navController = rememberNavController()
+DetalleDocumentoScreen(navController = navController, item = exampleItem )
 }

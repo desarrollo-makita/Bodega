@@ -507,7 +507,6 @@ fun BodegaTextField(item : PickingItem) {
 @Composable
 fun TotalItemTextField(item : PickingItem) {
     val totalItems = remember { mutableStateOf(TextFieldValue(item.Total_Items.toString())) }
-    Log.d("*Makita" ,"TOTALITEMS : $totalItems")
     Row(
         modifier = Modifier
             .fillMaxWidth()
