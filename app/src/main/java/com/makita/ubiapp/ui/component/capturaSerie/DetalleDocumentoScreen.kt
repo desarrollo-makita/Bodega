@@ -35,6 +35,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +52,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.substring
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -95,10 +95,10 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
     }
 
     LaunchedEffect(errorMessage) {
-        if (!errorMessage.isNullOrEmpty()) {
-            delay(1500) // Espera 1 segundo
+        if (errorMessage.isNullOrEmpty()) {
             errorMessage = null // Limpia el mensaje de error
         }
+
     }
 
     // Fondo degradado y diseño principal
@@ -424,6 +424,11 @@ fun CapturaScanner(
 ) {
     val textoEntrada = remember { mutableStateOf(TextFieldValue("")) }
     var itemScannerType by remember { mutableStateOf("") }
+    var serieInicial by remember { mutableStateOf("") }
+    var serieFinal by remember { mutableStateOf("") }
+    var  letraFabrica by remember { mutableStateOf("") }
+    var  ean by remember { mutableStateOf("") }
+
     val focusRequester = remember { FocusRequester() }
     val pickingListState = remember { mutableStateOf(pickingList ?: listOf()) }
 
@@ -434,42 +439,51 @@ fun CapturaScanner(
 
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
+            if(textoEntrada.value.text.length > 31){
+               // itemScannerType = "D-39425"
 
-            itemScannerType = "DHP453X10"
-            //itemScannerType = textoEntrada.value.text.substring(0,20).trim()
-            val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
+                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+                serieInicial = textoEntrada.value.text.substring(20,29).trim()
+                serieFinal = textoEntrada.value.text.substring(29,38).trim()
+                letraFabrica = textoEntrada.value.text.substring(38,39).trim()
+                ean = textoEntrada.value.text.substring(0,20).trim()
 
-            if (itemDetalle == null) {
-                actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
-            } else if(itemDetalle != null) {
-                if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
-                    actualizarMensajeError("El ítem ($itemScannerType) ya está completo. No se requiere más cantidad.")
-                }else{
-                    // Actualizar la lista con la nueva cantidad
-                    val updatedList = pickingListState.value.map { item ->
-                        if (item.item == itemScannerType) {
-                            val nuevaCantidad = item.Cantidad + 1
-                            item.copy(Cantidad = nuevaCantidad)
-                        } else {
-                            item
-                        }
+                Log.d("Serie de inicio : " ,"Serie de inicio $serieInicial")
+                Log.d("Serie Final :", "Serie Final $serieFinal")
+
+                val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
+
+                if (itemDetalle == null) {
+                    actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
+                } else if(itemDetalle != null) {
+
+                    if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
+                        actualizarMensajeError("El ítem ($itemScannerType) ya está completo. No se requiere más cantidad.")
+                    }else if(serieInicial == serieFinal ){ //unitario
+                        val catidadUnitaria = 0
+                        actualizarMensajeError("")
+                        procesarData(pickingListState , actualizarPickingList , itemScannerType , catidadUnitaria)
+
+                    }else{
+                        val cantidadMaster = serieFinal.toInt() - serieInicial.toInt()
+                        Log.d("Caja master  :" , "Caja master : $cantidadMaster")
+                        procesarData(pickingListState , actualizarPickingList , itemScannerType , cantidadMaster)
                     }
-                    pickingListState.value = updatedList
-                    actualizarPickingList(updatedList)
                 }
+
+                delay(1000)
+                textoEntrada.value = TextFieldValue("")
+                itemScannerType= ""
+            }else{
+                actualizarMensajeError("El código escaneado no corresponde.")
             }
 
-            delay(2000)
-            textoEntrada.value = TextFieldValue("")
-            itemScannerType= ""
         }
     }
 
     LaunchedEffect(pickingList) {
         pickingListState.value = pickingList ?: listOf()
     }
-
-    Log.d("acacac", "asas")
 
     // Campo de texto con foco inicial
     BasicTextField(
@@ -483,10 +497,25 @@ fun CapturaScanner(
     )
 }
 
-fun procesaData(itemScannerType: String){
+private fun procesarData(
+    pickingListState: MutableState<List<PickingDetalleItem>>,
+    actualizarPickingList: (List<PickingDetalleItem>) -> Unit,
+    itemScannerType: String,
+    catidad: Int
+) {
+    // Actualizar la lista con la nueva cantidad
+    val updatedList = pickingListState.value.map { item ->
+        if (item.item == itemScannerType) {
+            val nuevaCantidad = item.Cantidad + catidad
+            item.copy(Cantidad = nuevaCantidad)
+        } else {
+            item
+        }
+    }
+    pickingListState.value = updatedList
+    actualizarPickingList(updatedList)
 
 }
-
 
 
 @Preview(showBackground = true)
