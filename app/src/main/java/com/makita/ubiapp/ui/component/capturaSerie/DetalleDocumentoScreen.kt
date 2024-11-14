@@ -1,6 +1,5 @@
 package com.makita.ubiapp.ui.component.capturaSerie
 
-
 import android.util.Log
 import androidx.compose.foundation.background
 
@@ -52,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.substring
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -65,6 +65,9 @@ import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.delay
 
 import kotlinx.coroutines.launch
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
 
 val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
     save = { it.text }, // Guarda solo el texto
@@ -268,12 +271,10 @@ fun HeaderDetalle(item: PickingItem , errorMessage: String?) {
             )
 
             Text(
-                "Se encontraron ${cantidadItemInt.value} items" ,
+                "${cantidadItemInt.value} items encontrado" ,
                 color = GreenMakita,
                 modifier = Modifier.padding(top = 8.dp)
             )
-
-
 
             errorMessage?.let {
                 Text(
@@ -426,8 +427,8 @@ fun CapturaScanner(
     var itemScannerType by remember { mutableStateOf("") }
     var serieInicial by remember { mutableStateOf("") }
     var serieFinal by remember { mutableStateOf("") }
-    var  letraFabrica by remember { mutableStateOf("") }
-    var  ean by remember { mutableStateOf("") }
+    var letraFabrica by remember { mutableStateOf("") }
+    var ean by remember { mutableStateOf("") }
 
     val focusRequester = remember { FocusRequester() }
     val pickingListState = remember { mutableStateOf(pickingList ?: listOf()) }
@@ -439,14 +440,19 @@ fun CapturaScanner(
 
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
-            if(textoEntrada.value.text.length > 31){
-               // itemScannerType = "D-39425"
-
-                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+            if(textoEntrada.value.text.length > 39){
+                var mockitemScannerType = "DLM462PT4           000004158000004158Y0088381733540CLA"
+               /* itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
-                ean = textoEntrada.value.text.substring(0,20).trim()
+                ean = textoEntrada.value.text.substring(0,20).trim()*/
+
+                itemScannerType = mockitemScannerType.substring(0,20).trim()
+                serieInicial = mockitemScannerType.substring(20,29).trim()
+                serieFinal = mockitemScannerType.substring(29,38).trim()
+                letraFabrica = mockitemScannerType.substring(38,39).trim()
+                ean = mockitemScannerType.substring(0,20).trim()
 
                 Log.d("Serie de inicio : " ,"Serie de inicio $serieInicial")
                 Log.d("Serie Final :", "Serie Final $serieFinal")
@@ -462,12 +468,12 @@ fun CapturaScanner(
                     }else if(serieInicial == serieFinal ){ //unitario
                         val catidadUnitaria = 0
                         actualizarMensajeError("")
-                        procesarData(pickingListState , actualizarPickingList , itemScannerType , catidadUnitaria)
+                        procesarData(pickingListState , actualizarPickingList , itemScannerType , catidadUnitaria , serieInicial ,serieFinal )
 
                     }else{
                         val cantidadMaster = serieFinal.toInt() - serieInicial.toInt()
                         Log.d("Caja master  :" , "Caja master : $cantidadMaster")
-                        procesarData(pickingListState , actualizarPickingList , itemScannerType , cantidadMaster)
+                        procesarData(pickingListState , actualizarPickingList , itemScannerType , cantidadMaster, serieInicial ,serieFinal)
                     }
                 }
 
@@ -477,7 +483,6 @@ fun CapturaScanner(
             }else{
                 actualizarMensajeError("El código escaneado no corresponde.")
             }
-
         }
     }
 
@@ -501,21 +506,61 @@ private fun procesarData(
     pickingListState: MutableState<List<PickingDetalleItem>>,
     actualizarPickingList: (List<PickingDetalleItem>) -> Unit,
     itemScannerType: String,
-    catidad: Int
+    cantidad: Int,
+    serieInicial: String,
+    serieFinal: String
 ) {
-    // Actualizar la lista con la nueva cantidad
+    // Identificar y actualizar el item correspondiente
     val updatedList = pickingListState.value.map { item ->
         if (item.item == itemScannerType) {
-            val nuevaCantidad = item.Cantidad + catidad
-            item.copy(Cantidad = nuevaCantidad)
+            val nuevaCantidad = item.Cantidad + cantidad + 1
+            item.copy(
+                Cantidad = nuevaCantidad,
+                serie = serieInicial
+            )
         } else {
             item
         }
     }
+
+    // Obtener el item actualizado
+    val itemActualizado = updatedList.find { it.item == itemScannerType }
+
+    // Loguear y actualizar el estado de la lista
+    Log.d("item actualizado", "Item actualizado: $itemActualizado")
     pickingListState.value = updatedList
     actualizarPickingList(updatedList)
 
+    // Guardar solo el item actualizado
+    itemActualizado?.let { item ->
+        guardarArchivoPlano(listOf(item), "picking_data_capturados.txt")
+    }
 }
+
+
+fun guardarArchivoPlano(data: List<PickingDetalleItem>, nombreArchivo: String) {
+    try {
+        // Obtener la fecha y hora actual en el formato deseado
+        val fechaHoraActual = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
+
+        // Transformar cada objeto a la línea en formato requerido
+        val lineas = data.map { item ->
+            "makita;${item.linea};${item.item};${item.Descripcion};${item.Cantidad};" +
+                    "${item.CantidadPedida};${item.TipoDocumento};${item.Tipoitem};" +
+                    "${item.Unidad};${item.Ubicacion};${item.serie};MAKITA;$fechaHoraActual"
+        }
+
+        // Crear el archivo o agregar nuevas líneas si ya existe
+        val archivo = File("/data/data/com.makita.ubiapp/files", nombreArchivo)
+        archivo.appendText(lineas.joinToString("\n") + "\n") // Agregar las líneas al archivo con un salto de línea
+
+        Log.d("guardarArchivoPlano", "Líneas agregadas exitosamente: ${archivo.absolutePath}")
+    } catch (e: Exception) {
+        Log.e("guardarArchivoPlano", "Error al guardar el archivo: ${e.message}")
+    }
+}
+
+
 
 
 @Preview(showBackground = true)

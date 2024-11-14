@@ -205,7 +205,8 @@ data class PickingDetalleItem(
     val TipoDocumento: String,
     val Tipoitem: String,
     val Unidad: String,
-    val Ubicacion: String
+    val Ubicacion: String,
+    var serie :String
 )
 
 data class PickingDetalleResponse(
