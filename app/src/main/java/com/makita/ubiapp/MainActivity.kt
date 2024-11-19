@@ -154,30 +154,30 @@ class MainActivity : ComponentActivity() {
                 UbicacionScreen(username = username )
             }
 
-            composable("picking/") {
-                CapturaSerieScreen(navController)
+            composable("picking/{username}") {backStackEntry ->
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                CapturaSerieScreen(navController, username)
             }
 
 
-            composable("cabecera-documento/{item}") { backStackEntry ->
+            composable("cabecera-documento/{item}/{username}") { backStackEntry ->
                 val itemJson = backStackEntry.arguments?.getString("item")
+                val username = backStackEntry.arguments?.getString("username") ?: ""
                 if (itemJson != null) {
                     val pickingItem = Gson().fromJson(itemJson, PickingItem::class.java)
-                    CabeceraDocumentoScreen(navController, pickingItem)
+                    CabeceraDocumentoScreen(navController, pickingItem, username)
                 } else {
                     // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
                     Log.e("Navigation", "itemJson es null")
                 }
             }
 
-            composable("detalle-documento/{item}") { backStackEntry ->
+            composable("detalle-documento/{item}/{username}") { backStackEntry ->
                 val itemJson = backStackEntry.arguments?.getString("item")
-
-                Log.d("*MAKITA*", "ITEMJSON*********************: $itemJson")
-
+                val username = backStackEntry.arguments?.getString("username") ?: ""
                 if (itemJson != null) {
                     val pickingItem = Gson().fromJson(itemJson, PickingItem::class.java)
-                    DetalleDocumentoScreen(navController, pickingItem)
+                    DetalleDocumentoScreen(navController, pickingItem ,username)
                 } else {
                     // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
                     Log.e("Navigation", "itemJson es null")

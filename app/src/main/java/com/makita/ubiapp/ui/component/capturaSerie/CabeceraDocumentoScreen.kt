@@ -63,8 +63,7 @@ val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
 )
 
 @Composable
-fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem) {
-
+fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem , usuario:String) {
     // Fondo degradado
     Box(modifier = Modifier
         .fillMaxSize()
@@ -99,7 +98,7 @@ fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem) {
             TotalItemTextField(item)
             ReadOnlyTextArea(item)
             Separar()
-            Footer(navController , item)
+            Footer(navController , item , usuario)
 
         }
 
@@ -574,7 +573,7 @@ fun ReadOnlyTextArea(item: PickingItem) {
 
 
 @Composable
-fun Footer(navController: NavController , item: PickingItem) {
+fun Footer(navController: NavController , item: PickingItem ,usuario: String ) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Button(
             onClick = { navController.popBackStack() },
@@ -593,7 +592,8 @@ fun Footer(navController: NavController , item: PickingItem) {
         Button(
             onClick = {
                 val itemJson = Gson().toJson(item)
-                navController.navigate("detalle-documento/$itemJson")},
+                val username = usuario
+                navController.navigate("detalle-documento/$itemJson/$username")},
             modifier = Modifier
                 .weight(1f) // Este botón también ocupará el espacio restante
                 .padding(horizontal = 8.dp)
@@ -632,7 +632,8 @@ fun CabeceraDocumentoScreenPreview() {
 
     // Usar un navController simulado (puedes usar rememberNavController)
     val navController = rememberNavController()
+    val user = "juanito mena"
 
     // Llamar al composable que deseas previsualizar
-    CabeceraDocumentoScreen(navController = navController, item = exampleItem)
+    CabeceraDocumentoScreen(navController = navController, item = exampleItem , usuario=user)
 }

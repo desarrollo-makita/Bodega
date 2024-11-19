@@ -51,7 +51,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.substring
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -74,7 +73,7 @@ val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
 )
 @Composable
-fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
+fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usuario: String) {
     val coroutineScope = rememberCoroutineScope()
     var pickingList by remember { mutableStateOf<List<PickingDetalleItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -87,7 +86,24 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
                 val response = RetrofitClient.apiService.obtenerPickingCorrelativoDetalle(item.correlativo.toString())
                 if (response.isSuccessful && response.body() != null) {
                     pickingList = response.body()!!.data
+                    println("resultado de la lista  : $pickingList")
                     errorMessage = null
+
+                    // Iterar sobre los detalles y sumar la cantidad encontrada
+                    pickingList?.forEach { detalleItem ->
+                        val lineasEncontradas = leerArchivoCaptura(detalleItem.item)
+                        val cantidadEncontrada = lineasEncontradas.size
+
+                        // Sumar la cantidad encontrada al valor actual de Cantidad
+                        val nuevaCantidad = detalleItem.Cantidad + cantidadEncontrada
+                        println("Para el item '${detalleItem.item}', cantidad inicial: ${detalleItem.Cantidad}, cantidad encontrada: $cantidadEncontrada, nueva cantidad: $nuevaCantidad")
+
+                        // Si necesitas actualizar `Cantidad` en el objeto original:
+                        detalleItem.Cantidad = nuevaCantidad
+                    }
+
+                    // Imprimir el resultado final de la lista modificada
+                    println("Lista actualizada: $pickingList")
                 } else {
                     errorMessage = "Error al obtener los datos: ${response.code()}"
                 }
@@ -96,6 +112,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
             }
         }
     }
+
 
     LaunchedEffect(errorMessage) {
         if (errorMessage.isNullOrEmpty()) {
@@ -165,8 +182,9 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem) {
                 actualizarPickingList = { nuevaLista ->
                     pickingList = nuevaLista // Actualiza el estado global en el componente padre
                 },
-
-                ) {
+                usuario = usuario,
+                item = item,)
+            {
                 nuevoMensaje -> errorMessage = nuevoMensaje // Actualiza el mensaje global
             }
         }
@@ -421,6 +439,8 @@ fun FooterProcesar(navController: NavController) {
 fun CapturaScanner(
     pickingList: List<PickingDetalleItem>?,
     actualizarPickingList: (List<PickingDetalleItem>) -> Unit,
+    usuario: String,
+    item: PickingItem,
     actualizarMensajeError: (String) -> Unit
 ) {
     val textoEntrada = remember { mutableStateOf(TextFieldValue("")) }
@@ -441,21 +461,11 @@ fun CapturaScanner(
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
             if(textoEntrada.value.text.length > 39){
-                var mockitemScannerType = "DLM462PT4           000004158000004158Y0088381733540CLA"
-               /* itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
-                ean = textoEntrada.value.text.substring(0,20).trim()*/
-
-                itemScannerType = mockitemScannerType.substring(0,20).trim()
-                serieInicial = mockitemScannerType.substring(20,29).trim()
-                serieFinal = mockitemScannerType.substring(29,38).trim()
-                letraFabrica = mockitemScannerType.substring(38,39).trim()
-                ean = mockitemScannerType.substring(0,20).trim()
-
-                Log.d("Serie de inicio : " ,"Serie de inicio $serieInicial")
-                Log.d("Serie Final :", "Serie Final $serieFinal")
+                ean = textoEntrada.value.text.substring(0,20).trim()
 
                 val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
 
@@ -464,20 +474,36 @@ fun CapturaScanner(
                 } else if(itemDetalle != null) {
 
                     if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
-                        actualizarMensajeError("El ítem ($itemScannerType) ya está completo. No se requiere más cantidad.")
+                            actualizarMensajeError("El ítem ($itemScannerType) ya está completo. No se requiere más cantidad.")
                     }else if(serieInicial == serieFinal ){ //unitario
                         val catidadUnitaria = 0
                         actualizarMensajeError("")
-                        procesarData(pickingListState , actualizarPickingList , itemScannerType , catidadUnitaria , serieInicial ,serieFinal )
+                        procesarDataUnitario(item ,usuario,pickingListState ,actualizarPickingList ,itemScannerType ,catidadUnitaria,serieInicial ,serieFinal ,
+                            actualizarMensajeError = {
+                                mensaje -> actualizarMensajeError(mensaje)
+                            }
+                        )
 
                     }else{
                         val cantidadMaster = serieFinal.toInt() - serieInicial.toInt()
                         Log.d("Caja master  :" , "Caja master : $cantidadMaster")
-                        procesarData(pickingListState , actualizarPickingList , itemScannerType , cantidadMaster, serieInicial ,serieFinal)
+                        procesarDataMaster(
+                            item,
+                            usuario ,
+                            pickingListState ,
+                            actualizarPickingList ,
+                            itemScannerType ,
+                            cantidadMaster,
+                            serieInicial ,
+                            serieFinal,
+                            actualizarMensajeError = {
+                                mensaje -> actualizarMensajeError(mensaje)
+                            }
+                        )
                     }
                 }
 
-                delay(1000)
+                delay(500)
                 textoEntrada.value = TextFieldValue("")
                 itemScannerType= ""
             }else{
@@ -502,15 +528,30 @@ fun CapturaScanner(
     )
 }
 
-private fun procesarData(
+private fun procesarDataUnitario(
+    itemCorrelativo: PickingItem,
+    usuario: String,
     pickingListState: MutableState<List<PickingDetalleItem>>,
     actualizarPickingList: (List<PickingDetalleItem>) -> Unit,
     itemScannerType: String,
     cantidad: Int,
     serieInicial: String,
-    serieFinal: String
+    serieFinal: String,
+    actualizarMensajeError: (String) -> Unit
 ) {
-    // Identificar y actualizar el item correspondiente
+    val archivo = File("/data/data/com.makita.ubiapp/files", "picking_data_capturados.txt")
+
+    if (archivo.exists()) {
+        val validarSerie = validarSerieEnArchivo(itemCorrelativo.correlativo, serieInicial, archivo )
+
+        if (validarSerie) {
+            actualizarMensajeError("La serie ($serieInicial) ya ha sido capturada para este ítem (${itemCorrelativo.correlativo}). No se puede capturar nuevamente.")
+            return // Salir de la función si la serie ya está registrada
+
+        }
+
+    }
+
     val updatedList = pickingListState.value.map { item ->
         if (item.item == itemScannerType) {
             val nuevaCantidad = item.Cantidad + cantidad + 1
@@ -533,33 +574,155 @@ private fun procesarData(
 
     // Guardar solo el item actualizado
     itemActualizado?.let { item ->
-        guardarArchivoPlano(listOf(item), "picking_data_capturados.txt")
+        guardarArchivoPlano(listOf(item), "picking_data_capturados.txt" , usuario, itemCorrelativo,serieInicial,
+            serieFinal)
     }
 }
 
+private fun procesarDataMaster(
+    itemCorrelativo: PickingItem,
+    usuario: String,
+    pickingListState: MutableState<List<PickingDetalleItem>>,
+    actualizarPickingList: (List<PickingDetalleItem>) -> Unit,
+    itemScannerType: String,
+    cantidad: Int,
+    serieInicial: String,
+    serieFinal: String,
+    actualizarMensajeError: (String) -> Unit
+) {
+    val archivo = File("/data/data/com.makita.ubiapp/files", "picking_data_capturados.txt")
 
-fun guardarArchivoPlano(data: List<PickingDetalleItem>, nombreArchivo: String) {
+    if (archivo.exists()) {
+        val validarSerie = validarSerieEnArchivo(itemCorrelativo.correlativo, serieInicial, archivo , serieFinal )
+
+        println("procesamosDataMAster : $validarSerie")
+        if (validarSerie) {
+            actualizarMensajeError("La serie ($serieInicial) ya ha sido capturada para este ítem (${itemCorrelativo.correlativo}). No se puede capturar nuevamente.")
+            return // Salir de la función si la serie ya está registrada
+
+        }
+
+    }
+
+    val updatedList = pickingListState.value.map { item ->
+        if (item.item == itemScannerType) {
+            val nuevaCantidad = item.Cantidad + cantidad + 1
+            item.copy(
+                Cantidad = nuevaCantidad,
+                serie = serieInicial
+            )
+        } else {
+            item
+        }
+    }
+
+    // Obtener el item actualizado
+    val itemActualizado = updatedList.find { it.item == itemScannerType }
+
+    // Loguear y actualizar el estado de la lista
+    Log.d("item actualizado", "Item actualizado: $itemActualizado")
+    pickingListState.value = updatedList
+    actualizarPickingList(updatedList)
+
+    // Guardar solo el item actualizado
+    itemActualizado?.let { item ->
+        guardarArchivoPlano(listOf(item), "picking_data_capturados.txt" , usuario, itemCorrelativo,  serieInicial,
+            serieFinal)
+    }
+}
+fun guardarArchivoPlano(
+    data: List<PickingDetalleItem>,
+    nombreArchivo: String,
+    usuario: String,
+    itemCorrelativo: PickingItem,
+    serieInicial: String,
+    serieFinal: String
+) {
     try {
         // Obtener la fecha y hora actual en el formato deseado
         val fechaHoraActual = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
 
-        // Transformar cada objeto a la línea en formato requerido
-        val lineas = data.map { item ->
-            "makita;${item.linea};${item.item};${item.Descripcion};${item.Cantidad};" +
-                    "${item.CantidadPedida};${item.TipoDocumento};${item.Tipoitem};" +
-                    "${item.Unidad};${item.Ubicacion};${item.serie};MAKITA;$fechaHoraActual"
-        }
-
         // Crear el archivo o agregar nuevas líneas si ya existe
         val archivo = File("/data/data/com.makita.ubiapp/files", nombreArchivo)
-        archivo.appendText(lineas.joinToString("\n") + "\n") // Agregar las líneas al archivo con un salto de línea
+
+        // Usar un bucle `while` para iterar desde `serieInicial` hasta `serieFinal` en formato de cadena
+        var serieActual = serieInicial
+
+        // Iterar con un bucle `while` sobre el rango de cadenas
+        while (serieActual <= serieFinal) {
+            // Transformar cada objeto a la línea en formato requerido
+            val lineas = data.map { item ->
+                "Makita;${item.TipoDocumento};${itemCorrelativo.correlativo};${item.linea};${item.Tipoitem};${item.item};${item.Descripcion};${item.Unidad};${item.Ubicacion};" +
+                        "1;${item.Cantidad};$serieActual;${itemCorrelativo.CorrelativoOrigen};$usuario;$fechaHoraActual"
+            }
+
+            // Agregar las líneas al archivo
+            archivo.appendText(lineas.joinToString("\n") + "\n")
+
+            // Incrementar la serie manteniendo ceros a la izquierda
+            serieActual = (serieActual.toInt() + 1).toString().padStart(serieInicial.length, '0')
+        }
 
         Log.d("guardarArchivoPlano", "Líneas agregadas exitosamente: ${archivo.absolutePath}")
     } catch (e: Exception) {
         Log.e("guardarArchivoPlano", "Error al guardar el archivo: ${e.message}")
     }
 }
+fun validarSerieEnArchivo(correlativo: Int, nuevaSerie: String , archivo: File, serieFinal: String? = null): Boolean {
 
+    println("validarSerieEnArchivo : $correlativo - $nuevaSerie- $archivo -$serieFinal ")
+    // Leer las líneas del archivo
+    val lineas = archivo.readLines()
+
+    // Iterar sobre las líneas para verificar si el correlativo tiene asignada una serie
+    for (linea in lineas) {
+        val campos = linea.split(";")
+
+        // Verificar que la línea tiene el número correcto de campos
+        if (campos.size >= 15) {
+
+            val correlativoArchivo = campos[2]
+            val serieArchivo = campos[11]
+
+            if (correlativo == correlativoArchivo.toInt() && serieArchivo == nuevaSerie) {
+
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+fun leerArchivoCaptura(item: String): List<String> {
+    val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
+    val nombreArchivo = "picking_data_capturados.txt"
+    val archivo = File(rutaDirectorio, nombreArchivo)
+
+    if (archivo.exists()) {
+        println("Archivo de captura encontrado: ${archivo.path}")
+
+        // Leer el contenido del archivo
+        val contenido = archivo.readLines()
+
+        // Filtrar todas las líneas donde el campo 6 (índice 5) coincide con el `item`
+        val lineasEncontradas = contenido.filter { linea ->
+            val campos = linea.split(";")
+            campos.size > 5 && campos[5] == item
+        }
+
+        if (lineasEncontradas.isNotEmpty()) {
+            println("Líneas encontradas: $lineasEncontradas")
+            return lineasEncontradas
+        } else {
+            println("No se encontraron líneas con el item: $item")
+        }
+    } else {
+        println("Archivo de captura no encontrado.")
+    }
+
+    return emptyList()
+}
 
 
 
@@ -585,6 +748,7 @@ val exampleItem = PickingItem(
     Boddestino = "15"
 
 )
-val navController = rememberNavController()
-DetalleDocumentoScreen(navController = navController, item = exampleItem )
+    val navController = rememberNavController()
+    val usuario = "juanito mena"
+    DetalleDocumentoScreen(navController = navController, item = exampleItem , usuario )
 }

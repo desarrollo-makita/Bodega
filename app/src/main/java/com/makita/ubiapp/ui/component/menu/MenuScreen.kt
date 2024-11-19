@@ -168,7 +168,7 @@ fun MenuOptions(navController: NavController, nombreUsuario: String , actividade
                         navController.navigate("${actividad.ruta}${nombreUsuario}") // O alguna acción relacionada
 
                     }else if(actividad.ruta == "picking/"){
-                        navController.navigate("${actividad.ruta}") // O alguna acción relacionada
+                        navController.navigate("${actividad.ruta}${nombreUsuario}") // O alguna acción relacionada
                     }
 
 

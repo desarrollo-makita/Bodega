@@ -50,13 +50,14 @@ val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
 )
 @Composable
-fun CapturaSerieScreen(navController: NavController) {
+fun CapturaSerieScreen(navController: NavController, username:String) {
 
     var folioText by remember { mutableStateOf("") }
     var pickingList by remember { mutableStateOf<List<PickingItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
     val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
+    var usuarioActivo by remember { mutableStateOf<String?>(username) }
 
     fun cargarTodaLaData() {
         isLoading = true
@@ -166,7 +167,7 @@ fun CapturaSerieScreen(navController: NavController) {
                         .padding(start = 30.dp) // Menor margen
                 )
                     {
-                        PickingListTable(navController, pickingList)
+                        PickingListTable(navController, pickingList , usuarioActivo)
                     }
             }
 
@@ -260,7 +261,9 @@ fun EscanearItemTextField(
 }
 
 @Composable
-fun PickingListTable(navController: NavController, pickingList: List<PickingItem>?) {
+fun PickingListTable(navController: NavController,
+                     pickingList: List<PickingItem>? ,
+                     usuarioActivo : String?) {
     Log.d("*MAKITA*", ": $pickingList")
 
     // Definir las cabeceras y los campos que deseas mostrar
@@ -316,7 +319,7 @@ fun PickingListTable(navController: NavController, pickingList: List<PickingItem
                                     .clickable {
                                         if (index == 0) { // Solo permitir clics en el primer campo
                                             val itemJson = Gson().toJson(item) // Serializa el objeto PickingItem a JSON
-                                            navController.navigate("cabecera-documento/$itemJson")
+                                            navController.navigate("cabecera-documento/$itemJson/$usuarioActivo")
                                         }
                                     },
                                 fontSize = 12.sp,
@@ -412,7 +415,8 @@ fun formatDate(isoDate: String): String {
 @Composable
 fun CapturaSerieScreenView() {
     val navController = rememberNavController()
-    CapturaSerieScreen(navController = navController, )
+    val usuario = "juanito Mena"
+    CapturaSerieScreen(navController = navController , usuario)
 }
 
 
