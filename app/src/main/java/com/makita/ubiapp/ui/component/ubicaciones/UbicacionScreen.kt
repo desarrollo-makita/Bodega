@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 
@@ -28,16 +29,19 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.ActualizaUbicacionRequest
 import com.makita.ubiapp.RegistraBitacoraRequest
 import com.makita.ubiapp.RetrofitClient
+import com.makita.ubiapp.RetrofitClient.apiService
 import com.makita.ubiapp.UbicacionResponse
 import com.makita.ubiapp.ui.component.database.AppDatabase
 import com.makita.ubiapp.ui.component.entity.RegistraUbicacionEntity
@@ -80,6 +84,8 @@ fun UbicacionScreen(username: String) {
     val context = LocalContext.current
     val db = AppDatabase.getDatabase(context)
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     // base de datos en memoria
     val registrarUbicacionDao = db.registrarUbicacion()
 
@@ -100,6 +106,17 @@ fun UbicacionScreen(username: String) {
                 if (ubicaciones.isEmpty()) {
                     // Mostrar mensaje de error si no se encontraron datos
                     errorState = " No se encontraron datos para el item proporcionado"
+                }else{
+                    val ubicacionPrimera = ubicaciones.first() // Usar el primer elemento de la lista como ejemplo
+                    bitacoraRegistro(
+                        username = username,
+                        ubicacion = ubicacionPrimera,
+                        nuevaUbicacion = nuevaUbicacion.text,
+                        response = ubicaciones
+                    )
+
+
+                    Log.d("*MAKITA*", "[UbicacionScreen] Registro en bitácora completado")
                 }
             } catch (e: Exception) {
                 errorState = if (e.message?.contains("404") == true) {
@@ -111,7 +128,11 @@ fun UbicacionScreen(username: String) {
             }
         }
     }
+    LaunchedEffect(Unit) {
 
+        focusRequester.requestFocus()
+        keyboardController?.hide()
+    }
     // Inicio de interface
     // Fondo degradado
     Box(
@@ -162,6 +183,9 @@ fun UbicacionScreen(username: String) {
                     )
                 },
                 enabled = isTextFieldEnabled,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text  // mostrar teclado
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
                     unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
@@ -330,8 +354,8 @@ fun UbicacionScreen(username: String) {
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
+                    // se comenta para probar en bodega , solo ubicaciones sin cambio, descomentar despues.
+                 /*       Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         )
@@ -435,7 +459,7 @@ fun UbicacionScreen(username: String) {
                             ) {
                                 Text(text = "Grabar")
                             }
-                        }
+                        }*/
                     }
                 }
             }
@@ -492,6 +516,26 @@ fun formatTimestamp(timestamp: Long): String {
     val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     formatter.timeZone = TimeZone.getTimeZone("America/Santiago") // Zona horaria de Chile con ajuste DST
     return formatter.format(date)
+}
+
+
+suspend fun bitacoraRegistro(username : String , ubicacion: UbicacionResponse, nuevaUbicacion : String, response: List<UbicacionResponse>){
+    val nuevaUbicacionFinal = if (nuevaUbicacion.isBlank()) "" else nuevaUbicacion
+    val requestRegistroBitacora =
+        RegistraBitacoraRequest(
+            usuario = username,
+            fechaCambio = formatTimestamp(System.currentTimeMillis()),
+            item = ubicacion.item,
+            ubicacionAntigua = ubicacion.Ubicacion,
+            nuevaUbicacion = nuevaUbicacionFinal,
+            tipoItem = response.firstOrNull()?.tipoItem  ?: "",// Obtener tipoItem de la primera respuesta
+            operacion = "Consulta",
+        )
+
+    val bitacoraRegistroUbi =
+        apiService.insertaBitacoraUbicacion(
+            requestRegistroBitacora
+        )
 }
 
 

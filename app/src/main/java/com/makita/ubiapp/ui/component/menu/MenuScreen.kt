@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextAlign
 
@@ -214,6 +215,7 @@ fun getIconForActividad(actividad: String): ImageVector {
         "Inventario" -> Icons.Default.List
         "Almacenamiento" -> Icons.Default.Dataset
         "Etiquetado" -> Icons.Default.Label
+        "Picking" ->Icons.Default.QrCodeScanner
         else -> Icons.Default.Help // Icono por defecto si no se encuentra una coincidencia
     }
 }

@@ -17,14 +17,16 @@ data class UbicacionResponse(
     var descripcion: String,
     var item: String,
     var tipoItem: String,
-    var nuevaUbicacion: String
+    var nuevaUbicacion: String,
+    var operacion: String
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString() ?: "",
         parcel.readString() ?: "",
         parcel.readString() ?: "",
         parcel.readString() ?: "",
-        parcel.readString() ?: ""
+        parcel.readString() ?: "",
+        parcel.readString()?: ""
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -33,6 +35,7 @@ data class UbicacionResponse(
         parcel.writeString(item)
         parcel.writeString(tipoItem)
         parcel.writeString(nuevaUbicacion)
+        parcel.writeString(operacion)
     }
 
     override fun describeContents(): Int {
@@ -63,7 +66,8 @@ data class RegistraBitacoraRequest(
     val fechaCambio : String,
     val tipoItem : String,
     val ubicacionAntigua : String,
-    val nuevaUbicacion : String
+    val nuevaUbicacion : String,
+    val operacion :  String
 )
 
 data class RegistroUbicacionRequest(
@@ -214,6 +218,32 @@ data class PickingDetalleResponse(
     val data: List<PickingDetalleItem>
 )
 
+data class DataUpdateCapturaReq(
+    val correlativo: Int,
+    val linea: String,
+    val item : String
+)
+
+data class InsertCaptura(
+    val empresa : String,
+    val tipoDocumento: String,
+    val correlativo: String,
+    val linea: String,
+    val tipoItem: String,
+    val item: String,
+    val descripcion: String,
+    val unidad: String,
+    val ubicacion: String,
+    val cantidad: String,
+    val cantidadPedida: String,
+    val serieActual: String,
+    val usuario: String,
+    val fechaHoraActual: String
+)
+data class InsertCapturaList(
+    val data: List<InsertCaptura>
+)
+
 interface ApiService {
 
     @GET("api/obtener-ubicacion/{ubicacion}")
@@ -253,4 +283,14 @@ interface ApiService {
 
     @GET("api/get-picking-correlativo-detalle/{correlativo}")
     suspend fun obtenerPickingCorrelativoDetalle(@Path("correlativo") correlativo: String): Response<PickingDetalleResponse>
+
+    @PUT("api/actualiza-glosa-enproceso")
+    suspend fun updateCapturaEnProceso(@Body request: DataUpdateCapturaReq): Response<Unit>
+
+    @PUT("api/update-glosa-procesados")
+    suspend fun updateCapturaProcesado(@Body request: DataUpdateCapturaReq): Response<Unit>
+
+    @POST("api/insertar-datos-capturados")
+    suspend fun insertarCapturasSeries(@Body request: InsertCapturaList): Response<Unit>
+
 }

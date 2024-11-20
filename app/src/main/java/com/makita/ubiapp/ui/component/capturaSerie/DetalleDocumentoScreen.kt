@@ -15,13 +15,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -57,13 +58,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.makita.ubiapp.DataUpdateCapturaReq
+import com.makita.ubiapp.InsertCaptura
+import com.makita.ubiapp.InsertCapturaList
 import com.makita.ubiapp.PickingDetalleItem
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.ui.theme.GreenMakita
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -77,16 +84,16 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
     val coroutineScope = rememberCoroutineScope()
     var pickingList by remember { mutableStateOf<List<PickingDetalleItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) } // Estado para el loading
 
-
-    // Llamada a la API al iniciar
-    LaunchedEffect(Unit) {
+    fun cargarTodaLaData(){
+        isLoading = true
         coroutineScope.launch {
             try {
+                delay(1000) // Simulación de espera
                 val response = RetrofitClient.apiService.obtenerPickingCorrelativoDetalle(item.correlativo.toString())
                 if (response.isSuccessful && response.body() != null) {
                     pickingList = response.body()!!.data
-                    println("resultado de la lista  : $pickingList")
                     errorMessage = null
 
                     // Iterar sobre los detalles y sumar la cantidad encontrada
@@ -109,11 +116,15 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 }
             } catch (e: Exception) {
                 errorMessage = "Error de red: ${e.localizedMessage}"
+            }finally {
+                isLoading = false
             }
         }
     }
 
-
+    LaunchedEffect(Unit) {
+        cargarTodaLaData()
+    }
     LaunchedEffect(errorMessage) {
         if (errorMessage.isNullOrEmpty()) {
             errorMessage = null // Limpia el mensaje de error
@@ -152,6 +163,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
             HeaderDetalle(item , errorMessage)
         }
 
+
         // Tabla con datos desplazables
         Box(
             modifier = Modifier
@@ -160,7 +172,9 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 .background(Color.White)
                 .padding(0.dp)
         ) {
-
+            if(isLoading){
+            LoadingIndicator()
+        }
             ItemListTable(pickingList)
         }
 
@@ -177,7 +191,12 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 .padding(16.dp)
         ) {
             SepararDetalle()
-            FooterProcesar(navController)
+            FooterProcesar(
+                navController,
+                usuario,
+                onActualizarClick = {
+                cargarTodaLaData()
+            })
             CapturaScanner(pickingList = pickingList,
                 actualizarPickingList = { nuevaLista ->
                     pickingList = nuevaLista // Actualiza el estado global en el componente padre
@@ -392,7 +411,7 @@ fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
 }
 
 @Composable
-fun FooterProcesar(navController: NavController) {
+fun FooterProcesar( navController: NavController , usuario: String, onActualizarClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -400,40 +419,47 @@ fun FooterProcesar(navController: NavController) {
         horizontalArrangement = Arrangement.SpaceEvenly // Espacio uniforme entre los botones
     ) {
         Button(
-            onClick = { },
-            modifier = Modifier
-                .weight(1f) // Cada botón ocupa la misma proporción del espacio disponible
-                .padding(horizontal = 4.dp), // Espaciado entre los botones
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E)),
-            contentPadding = PaddingValues(8.dp) // Espaciado interno para mantener buen tamaño del ícono
-        ) {
-            Icon(Icons.Default.PlayArrow, contentDescription = "Procesar", tint = Color.White)
-        }
-
-        Button(
-            onClick = { },
+            onClick = { procesarDatos(navController , usuario) },
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E)),
             contentPadding = PaddingValues(8.dp)
         ) {
-            Icon(Icons.Default.Refresh, contentDescription = "Actualizar", tint = Color.White)
+            Row(
+                verticalAlignment = Alignment.CenterVertically // Centra el texto y el ícono verticalmente
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = "Procesar", tint = Color.White)
+                Text(
+                    text = "Procesar",
+                    color = Color.White,
+                    modifier = Modifier.padding(start = 8.dp) // Espaciado a la izquierda del texto
+                )
+            }
         }
 
         Button(
-            onClick = { navController.popBackStack() },
+            onClick = {onActualizarClick()  },
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E)),
             contentPadding = PaddingValues(8.dp)
         ) {
-            Icon(Icons.Default.ExitToApp, contentDescription = "Salir", tint = Color.White)
+            Row(
+                verticalAlignment = Alignment.CenterVertically // Centra el texto y el ícono verticalmente
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = "Actualizar", tint = Color.White)
+                Text(
+                    text = "Actualizar",
+                    color = Color.White,
+                    modifier = Modifier.padding(start = 8.dp) // Espaciado a la izquierda del texto
+                )
+            }
         }
     }
-
 }
+
 
 @Composable
 fun CapturaScanner(
@@ -450,6 +476,7 @@ fun CapturaScanner(
     var letraFabrica by remember { mutableStateOf("") }
     var ean by remember { mutableStateOf("") }
 
+
     val focusRequester = remember { FocusRequester() }
     val pickingListState = remember { mutableStateOf(pickingList ?: listOf()) }
 
@@ -461,12 +488,19 @@ fun CapturaScanner(
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
             if(textoEntrada.value.text.length > 39){
-                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+             //var mockitemScannerType = "M9510B              000004158000004163Y0088381733540CLA"
+               itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
                 ean = textoEntrada.value.text.substring(0,20).trim()
 
+                /*itemScannerType = mockitemScannerType.substring(0,20).trim()
+                serieInicial = mockitemScannerType.substring(20,29).trim()
+                serieFinal = mockitemScannerType.substring(29,38).trim()
+                letraFabrica = mockitemScannerType.substring(38,39).trim()
+                ean = mockitemScannerType.substring(0,20).trim()
+*/
                 val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
 
                 if (itemDetalle == null) {
@@ -483,7 +517,6 @@ fun CapturaScanner(
                                 mensaje -> actualizarMensajeError(mensaje)
                             }
                         )
-
                     }else{
                         val cantidadMaster = serieFinal.toInt() - serieInicial.toInt()
                         Log.d("Caja master  :" , "Caja master : $cantidadMaster")
@@ -595,8 +628,7 @@ private fun procesarDataMaster(
     if (archivo.exists()) {
         val validarSerie = validarSerieEnArchivo(itemCorrelativo.correlativo, serieInicial, archivo , serieFinal )
 
-        println("procesamosDataMAster : $validarSerie")
-        if (validarSerie) {
+       if (validarSerie) {
             actualizarMensajeError("La serie ($serieInicial) ya ha sido capturada para este ítem (${itemCorrelativo.correlativo}). No se puede capturar nuevamente.")
             return // Salir de la función si la serie ya está registrada
 
@@ -626,7 +658,12 @@ private fun procesarDataMaster(
 
     // Guardar solo el item actualizado
     itemActualizado?.let { item ->
-        guardarArchivoPlano(listOf(item), "picking_data_capturados.txt" , usuario, itemCorrelativo,  serieInicial,
+        guardarArchivoPlano(
+            listOf(item),
+            "picking_data_capturados.txt" ,
+            usuario,
+            itemCorrelativo,
+            serieInicial,
             serieFinal)
     }
 }
@@ -663,14 +700,36 @@ fun guardarArchivoPlano(
             serieActual = (serieActual.toInt() + 1).toString().padStart(serieInicial.length, '0')
         }
 
-        Log.d("guardarArchivoPlano", "Líneas agregadas exitosamente: ${archivo.absolutePath}")
+        val correlativo = itemCorrelativo.correlativo
+        val linea = data.firstOrNull()?.linea?.toString() ?: ""
+        val item = data.firstOrNull()?.item.orEmpty()
+
+        // Crear la solicitud
+        val request = DataUpdateCapturaReq(
+            correlativo = correlativo,
+            linea = linea,
+            item = item
+        )
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+
+                val response = RetrofitClient.apiService.updateCapturaEnProceso(request)
+                if (response.isSuccessful) {
+                    Log.d("guardarArchivoPlano", "Datos enviados exitosamente a la API.")
+                } else {
+                    Log.e("guardarArchivoPlano", "Error al enviar datos a la API: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("guardarArchivoPlano", "Error al enviar datos a la API: ${e.message}")
+            }
+        }
     } catch (e: Exception) {
         Log.e("guardarArchivoPlano", "Error al guardar el archivo: ${e.message}")
     }
 }
 fun validarSerieEnArchivo(correlativo: Int, nuevaSerie: String , archivo: File, serieFinal: String? = null): Boolean {
 
-    println("validarSerieEnArchivo : $correlativo - $nuevaSerie- $archivo -$serieFinal ")
     // Leer las líneas del archivo
     val lineas = archivo.readLines()
 
@@ -694,14 +753,12 @@ fun validarSerieEnArchivo(correlativo: Int, nuevaSerie: String , archivo: File, 
     return false
 }
 
-fun leerArchivoCaptura(item: String): List<String> {
+fun leerArchivoCaptura(item: String?): List<String> {
     val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
     val nombreArchivo = "picking_data_capturados.txt"
     val archivo = File(rutaDirectorio, nombreArchivo)
 
     if (archivo.exists()) {
-        println("Archivo de captura encontrado: ${archivo.path}")
-
         // Leer el contenido del archivo
         val contenido = archivo.readLines()
 
@@ -712,13 +769,104 @@ fun leerArchivoCaptura(item: String): List<String> {
         }
 
         if (lineasEncontradas.isNotEmpty()) {
-            println("Líneas encontradas: $lineasEncontradas")
+           Log.d("leo el archivo y obtengo esta data : " , "$lineasEncontradas")
             return lineasEncontradas
         } else {
             println("No se encontraron líneas con el item: $item")
         }
     } else {
         println("Archivo de captura no encontrado.")
+    }
+
+    return emptyList()
+}
+
+@Composable
+fun LoadingIndicator() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentSize(Alignment.Center) // Centra el texto en la pantalla
+    ) {
+        Text(text = "Cargando...", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = GreenMakita)
+    }
+}
+
+fun procesarDatos(navController: NavController, usuario: String) {
+    val capturas = leerArchivoCapturaCompleto()
+    val username = usuario
+    if (capturas.isNotEmpty()) {
+        val capturaList = InsertCapturaList(data = capturas)
+
+        Log.d("*Makita*", "ArchivoLectura $capturaList")
+
+        // Ejecutar la tarea de red en un hilo de fondo
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Llamada a la API para insertar los datos
+                val response = RetrofitClient.apiService.insertarCapturasSeries(capturaList)
+
+                // Si la respuesta es exitosa, navegar a la siguiente pantalla
+                if (response.isSuccessful) {
+                    Log.d("Proceso", "Datos enviados correctamente.")
+
+                    // Cambiar al hilo principal para hacer la navegación
+                    withContext(Dispatchers.Main) {
+                        // Navegar a la pantalla "picking/{username}"
+                        navController.navigate("picking/$username")
+                    }
+                } else {
+                    Log.e("Error Proceso", "Error al enviar datos: ${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("Excepción Proceso", "Excepción al enviar datos: ${e.message}")
+            }
+        }
+    } else {
+        Log.e("Archivo", "No se encontraron datos en el archivo.")
+    }
+}
+
+
+fun leerArchivoCapturaCompleto(): List<InsertCaptura> {
+    val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
+    val nombreArchivo = "picking_data_capturados.txt"
+    val archivo = File(rutaDirectorio, nombreArchivo)
+    val capturas = mutableListOf<InsertCaptura>()
+
+    if (archivo.exists()) {
+        Log.d("Archivo", "Archivo de captura encontrado: ${archivo.path}")
+
+        // Procesar cada línea del archivo
+        archivo.forEachLine { linea ->
+            val campos = linea.split(";")
+            if (campos.size == 15) {
+                Log.d("parametros","parametros $campos")
+                val captura = InsertCaptura(
+                    empresa = campos[0],
+                    tipoDocumento = campos[1],
+                    correlativo = campos[2],
+                    linea = campos[3],
+                    tipoItem = campos[4],
+                    item = campos[5],
+                    descripcion = campos[6],
+                    unidad = campos[7],
+                    ubicacion = campos[8],
+                    cantidadPedida = campos[9],
+                    cantidad = campos[10],
+                    serieActual = campos[11],
+                    usuario = campos[13],
+                    fechaHoraActual = campos[14]
+                )
+                capturas.add(captura)
+            } else {
+                Log.e("Error Línea", "Línea con formato incorrecto: $linea")
+            }
+        }
+        Log.d("Capturas", "Capturas obtenidas: $capturas")
+        return capturas
+    } else {
+        Log.e("Archivo", "Archivo de captura no encontrado.")
     }
 
     return emptyList()
