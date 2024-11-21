@@ -86,6 +86,8 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
 
+    val areAllItemsComplete = pickingList?.all { it.Cantidad == it.CantidadPedida } == true
+
     fun cargarTodaLaData(){
         isLoading = true
         coroutineScope.launch {
@@ -196,7 +198,9 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 usuario,
                 onActualizarClick = {
                 cargarTodaLaData()
-            })
+            },
+                isEnabled = areAllItemsComplete
+            )
             CapturaScanner(pickingList = pickingList,
                 actualizarPickingList = { nuevaLista ->
                     pickingList = nuevaLista // Actualiza el estado global en el componente padre
@@ -307,12 +311,6 @@ fun HeaderDetalle(item: PickingItem , errorMessage: String?) {
                 enabled = false
             )
 
-            Text(
-                "${cantidadItemInt.value} items encontrado" ,
-                color = GreenMakita,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-
             errorMessage?.let {
                 Text(
                     it,
@@ -350,6 +348,10 @@ fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
         { item -> item.Ubicacion ?: "Sin ubicación" }
     )
 
+    // Calcular cuántos ítems están completos
+    val completedItemsCount = pickingList?.count { it.Cantidad == it.CantidadPedida } ?: 0
+    val totalItemsCount = pickingList?.size ?: 0
+
     // Contenedor desplazable horizontal y vertical
     Box(
         modifier = Modifier
@@ -358,7 +360,15 @@ fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
             .horizontalScroll(rememberScrollState())
     ) {
         Column {
-
+            Text(
+                text = "$completedItemsCount de $totalItemsCount ítems completos",
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .align(Alignment.Start),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = GreenMakita
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -385,6 +395,7 @@ fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
                 pickingList?.forEach { item ->
+
                     val backgroundColor = if (item.Cantidad == item.CantidadPedida) GreenMakita.copy(alpha = 0.1f) else Color.Transparent
 
                     Row(
@@ -411,7 +422,7 @@ fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
 }
 
 @Composable
-fun FooterProcesar( navController: NavController , usuario: String, onActualizarClick: () -> Unit) {
+fun FooterProcesar( navController: NavController , usuario: String, onActualizarClick: () -> Unit, isEnabled: Boolean ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -424,7 +435,8 @@ fun FooterProcesar( navController: NavController , usuario: String, onActualizar
                 .weight(1f)
                 .padding(horizontal = 4.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E)),
-            contentPadding = PaddingValues(8.dp)
+            contentPadding = PaddingValues(8.dp),
+            enabled = isEnabled
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically // Centra el texto y el ícono verticalmente
@@ -488,19 +500,20 @@ fun CapturaScanner(
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
             if(textoEntrada.value.text.length > 39){
-             //var mockitemScannerType = "M9510B              000004158000004163Y0088381733540CLA"
-               itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+               var mockitemScannerType = "DML814              000004158000004159Y0088381733540CLA"
+
+                /*itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
                 ean = textoEntrada.value.text.substring(0,20).trim()
-
-                /*itemScannerType = mockitemScannerType.substring(0,20).trim()
+*/
+                itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 letraFabrica = mockitemScannerType.substring(38,39).trim()
                 ean = mockitemScannerType.substring(0,20).trim()
-*/
+
                 val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
 
                 if (itemDetalle == null) {
@@ -795,7 +808,12 @@ fun LoadingIndicator() {
 fun procesarDatos(navController: NavController, usuario: String) {
     val capturas = leerArchivoCapturaCompleto()
     val username = usuario
-    if (capturas.isNotEmpty()) {
+    val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
+    val nombreArchivo = "picking_data_capturados.txt"
+
+    val archivo = File(rutaDirectorio, nombreArchivo)
+
+        if (capturas.isNotEmpty()) {
         val capturaList = InsertCapturaList(data = capturas)
 
         Log.d("*Makita*", "ArchivoLectura $capturaList")
@@ -810,9 +828,11 @@ fun procesarDatos(navController: NavController, usuario: String) {
                 if (response.isSuccessful) {
                     Log.d("Proceso", "Datos enviados correctamente.")
 
+                    //elimino el archivo en el proceso exitoso
+                    archivo.delete()
+
                     // Cambiar al hilo principal para hacer la navegación
                     withContext(Dispatchers.Main) {
-                        // Navegar a la pantalla "picking/{username}"
                         navController.navigate("picking/$username")
                     }
                 } else {
