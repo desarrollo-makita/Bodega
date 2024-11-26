@@ -281,8 +281,8 @@ interface ApiService {
     @GET("api/get-picking-folio/{folio}")
     suspend fun obtenerPickingFolio(@Path("folio") folio: String):Response <PickingResponse>
 
-    @GET("api/get-picking-correlativo-detalle/{correlativo}")
-    suspend fun obtenerPickingCorrelativoDetalle(@Path("correlativo") correlativo: String): Response<PickingDetalleResponse>
+    @GET("api/get-picking-correlativo-detalle/{correlativo}/{area}")
+    suspend fun obtenerPickingCorrelativoDetalle(@Path("correlativo") correlativo: String,@Path("area") area: String): Response<PickingDetalleResponse>
 
     @PUT("api/actualiza-glosa-enproceso")
     suspend fun updateCapturaEnProceso(@Body request: DataUpdateCapturaReq): Response<Unit>

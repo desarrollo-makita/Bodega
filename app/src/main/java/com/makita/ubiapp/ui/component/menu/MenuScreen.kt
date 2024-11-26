@@ -49,7 +49,7 @@ fun MenuScreen(
     Log.d("*MAKITA*" , "MenuScreen Iniciando composable MenuScreen")
 
     Log.d("*MAKITA*" , "MenuScreen- inicio(nombreUsuario :) $nombreUsuario")
-    Log.d("*MAKITA*" , "MenuScreen- inicio(area :) $area|")
+    Log.d("*MAKITA*" , "MenuScreen- inicio(area :) $area")
     Log.d("*MAKITA*" , "MenuScreen- inicio(vigencia :) $vigencia")
     Log.d("*MAKITA*" , "MenuScreen- inicio(idUsuario :) $idUsuario")
     Log.d("*MAKITA*" , "MenuScreen- inicio(token :) $token")

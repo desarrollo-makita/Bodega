@@ -93,7 +93,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
         coroutineScope.launch {
             try {
                 delay(1000) // Simulación de espera
-                val response = RetrofitClient.apiService.obtenerPickingCorrelativoDetalle(item.correlativo.toString())
+                val response = RetrofitClient.apiService.obtenerPickingCorrelativoDetalle(item.correlativo.toString() , area.trim())
                 if (response.isSuccessful && response.body() != null) {
                     pickingList = response.body()!!.data
                     errorMessage = null
@@ -522,6 +522,9 @@ fun CapturaScanner(
 
                 if (itemDetalle == null) {
                     actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
+                    delay(500)
+                    textoEntrada.value = TextFieldValue("")
+                    itemScannerType= ""
                 } else if(itemDetalle != null) {
 
                     if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
@@ -581,10 +584,16 @@ fun CapturaScanner(
 
                 if (itemDetalle == null) {
                     actualizarMensajeError("El ítem ($codigoComercial) no se encuentra en la lista.")
+                    delay(500)
+                    textoEntrada.value = TextFieldValue("")
+                    itemScannerType= ""
                 }else {
 
                     if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
                         actualizarMensajeError("El ítem ($codigoComercial) ya está completo. No se requiere más cantidad.")
+                        delay(500)
+                        textoEntrada.value = TextFieldValue("")
+                        itemScannerType= ""
                     }else if(serieInicial == serieFinal ){ //unitario
                         val catidadUnitaria = 0
                         actualizarMensajeError("")
