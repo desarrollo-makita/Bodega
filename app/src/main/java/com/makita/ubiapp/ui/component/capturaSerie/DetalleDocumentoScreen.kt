@@ -503,6 +503,7 @@ fun CapturaScanner(
 
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
+            Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length}")
             if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
                // var mockitemScannerType = "DML814              000004158000004159Y0088381733540CLA"
 
@@ -522,7 +523,7 @@ fun CapturaScanner(
 
                 if (itemDetalle == null) {
                     actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
-                    delay(500)
+
                     textoEntrada.value = TextFieldValue("")
                     itemScannerType= ""
                 } else if(itemDetalle != null) {
@@ -556,12 +557,12 @@ fun CapturaScanner(
                     }
                 }
 
-                delay(500)
+
                 textoEntrada.value = TextFieldValue("")
                 itemScannerType= ""
             }
             else if(textoEntrada.value.text.length > 55){
-                Log.d("*MAKITA*","ENTRO TEXTOeNTRADA ${textoEntrada.value.text.length}")
+
                 //var mockitemScannerType = "999999-9            00000004600000004600088381597463000197363-40000DC18WC000000000000000000000000000000"
 
                 itemScannerType = textoEntrada.value.text.substring(0,20).trim()
@@ -584,14 +585,13 @@ fun CapturaScanner(
 
                 if (itemDetalle == null) {
                     actualizarMensajeError("El ítem ($codigoComercial) no se encuentra en la lista.")
-                    delay(500)
+
                     textoEntrada.value = TextFieldValue("")
                     itemScannerType= ""
                 }else {
 
                     if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
-                        actualizarMensajeError("El ítem ($codigoComercial) ya está completo. No se requiere más cantidad.")
-                        delay(500)
+
                         textoEntrada.value = TextFieldValue("")
                         itemScannerType= ""
                     }else if(serieInicial == serieFinal ){ //unitario
@@ -607,6 +607,8 @@ fun CapturaScanner(
             }
             else{
                 actualizarMensajeError("El código escaneado no corresponde.")
+                textoEntrada.value = TextFieldValue("")
+                itemScannerType= ""
             }
         }
     }
