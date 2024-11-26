@@ -50,21 +50,22 @@ val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
 )
 @Composable
-fun CapturaSerieScreen(navController: NavController, username:String) {
-
+fun CapturaSerieScreen(navController: NavController, username:String , area : String) {
+    Log.d("*MAKITA*" , "entroooo : $area")
     var folioText by remember { mutableStateOf("") }
     var pickingList by remember { mutableStateOf<List<PickingItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
     val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
     var usuarioActivo by remember { mutableStateOf<String?>(username) }
+    var area1 by remember { mutableStateOf<String?>(area) }
 
     fun cargarTodaLaData() {
         isLoading = true
         coroutineScope.launch {
             try {
                 delay(1000) // Simulación de espera
-                val response = RetrofitClient.apiService.obtenerPickinglist()
+                val response = RetrofitClient.apiService.obtenerPickinglist(area1.toString())
                 if (response.isSuccessful && response.body() != null) {
                     pickingList = response.body()!!.data
                     errorMessage = null
@@ -167,7 +168,7 @@ fun CapturaSerieScreen(navController: NavController, username:String) {
                         .padding(start = 30.dp) // Menor margen
                 )
                     {
-                        PickingListTable(navController, pickingList , usuarioActivo)
+                        PickingListTable(navController, pickingList , usuarioActivo , area1 )
                     }
             }
 
@@ -263,7 +264,8 @@ fun EscanearItemTextField(
 @Composable
 fun PickingListTable(navController: NavController,
                      pickingList: List<PickingItem>? ,
-                     usuarioActivo : String?) {
+                     usuarioActivo : String?,
+                     area : String?) {
     Log.d("*MAKITA*", ": $pickingList")
 
     // Definir las cabeceras y los campos que deseas mostrar
@@ -319,7 +321,7 @@ fun PickingListTable(navController: NavController,
                                     .clickable {
                                         if (index == 0) { // Solo permitir clics en el primer campo
                                             val itemJson = Gson().toJson(item) // Serializa el objeto PickingItem a JSON
-                                            navController.navigate("cabecera-documento/$itemJson/$usuarioActivo")
+                                            navController.navigate("cabecera-documento/$itemJson/$usuarioActivo/$area")
                                         }
                                     },
                                 fontSize = 12.sp,
@@ -416,7 +418,8 @@ fun formatDate(isoDate: String): String {
 fun CapturaSerieScreenView() {
     val navController = rememberNavController()
     val usuario = "juanito Mena"
-    CapturaSerieScreen(navController = navController , usuario)
+    val area = "Accesorios"
+    CapturaSerieScreen(navController = navController , usuario , area)
 }
 
 

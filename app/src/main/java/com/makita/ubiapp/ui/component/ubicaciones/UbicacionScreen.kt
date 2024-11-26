@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.ActualizaUbicacionRequest
@@ -67,6 +69,7 @@ fun UbicacionScreen(username: String) {
 
     val apiService = RetrofitClient.apiService
     var text by rememberSaveable(stateSaver = TextFieldValueSaver) { mutableStateOf(TextFieldValue()) }
+    var secondTextFieldValue by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue())}
     var nuevaUbicacion by rememberSaveable(stateSaver = TextFieldValueSaver) {mutableStateOf(TextFieldValue())}
     var response by rememberSaveable { mutableStateOf<List<UbicacionResponse>>(emptyList()) }
     var clearRequested by rememberSaveable { mutableStateOf(false) }
@@ -133,8 +136,41 @@ fun UbicacionScreen(username: String) {
         focusRequester.requestFocus()
         keyboardController?.hide()
     }
-    // Inicio de interface
-    // Fondo degradado
+    suspend fun buscarUbiManual(textoManual : String){
+        try {
+            val ubicaciones = apiService.obtenerUbicacion(textoManual)
+            response = ubicaciones
+
+            // Limpiar mensajes de error y éxito previos si hubo una respuesta válida
+            errorState = null
+            successMessage = null
+
+            Log.d("*MAKITA*", "[UbicacionScreen] Respuesta servicio obtenerUbicacion  : ${text.text}")
+
+            if (ubicaciones.isEmpty()) {
+                // Mostrar mensaje de error si no se encontraron datos
+                errorState = " No se encontraron datos para el item proporcionado"
+            }else{
+                val ubicacionPrimera = ubicaciones.first() // Usar el primer elemento de la lista como ejemplo
+                bitacoraRegistro(
+                    username = username,
+                    ubicacion = ubicacionPrimera,
+                    nuevaUbicacion = nuevaUbicacion.text,
+                    response = ubicaciones
+                )
+
+
+                Log.d("*MAKITA*", "[UbicacionScreen] Registro en bitácora completado")
+            }
+        } catch (e: Exception) {
+            errorState = if (e.message?.contains("404") == true) {
+                "No se encontraron datos para el item proporcionado"
+            } else {
+                "Error al obtener ubicación: ${e.message}"
+            }
+            e.printStackTrace()
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -153,12 +189,12 @@ fun UbicacionScreen(username: String) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()) // Agregar scroll aquí
-                .padding(16.dp)
+                .padding(2.dp)
                 .background(Color.White, shape = RoundedCornerShape(20.dp))
-                .padding(24.dp),
+                .padding(20.dp),
 
             ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedTextField(
                 text,
@@ -172,6 +208,7 @@ fun UbicacionScreen(username: String) {
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
                     .focusRequester(focusRequester),
+                shape = RoundedCornerShape(12.dp),
                 label = {
                     Text(
                         "Escanear Item",
@@ -203,6 +240,54 @@ fun UbicacionScreen(username: String) {
                             .clickable {
                                 clearRequested = true
                                 focusRequester.requestFocus()
+                            },
+                        tint = GreenMakita
+                    )
+                },
+            )
+
+            OutlinedTextField(
+                value = secondTextFieldValue, // Variable para el estado del nuevo TextField
+                onValueChange = { newValue ->
+                    val upperCaseValue = newValue.text.uppercase().take(20)
+                    secondTextFieldValue = newValue.copy(text = upperCaseValue)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(12.dp),// No incluimos `focusRequester` para evitar foco automático
+                label = {
+                    Text(
+                        "Ingreso Manual", // Cambia el texto del label según lo necesario
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GreenMakita
+                        )
+                    )
+                },
+                enabled = true, // El campo está habilitado para escritura por teclado
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text // Mostrar teclado de texto
+                ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
+                    unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
+                    focusedLabelColor = GreenMakita,      // Color del label cuando el campo está enfocado
+                    unfocusedLabelColor = GreenMakita,    // Color del label cuando no está enfocado
+                    cursorColor = GreenMakita,            // Color del cursor en GreenMakita
+                ),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow, // Icono de "Play"
+                        contentDescription = "Acción de enviar",
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    clearRequested = true
+                                    buscarUbiManual(secondTextFieldValue.text)
+                                }
                             },
                         tint = GreenMakita
                     )
@@ -289,12 +374,14 @@ fun UbicacionScreen(username: String) {
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(end = 8.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenMakita,
-                                    unfocusedBorderColor = Color.Gray,
-                                    focusedLabelColor = GreenMakita,
-                                    cursorColor = GreenMakita,
-                                )
+                                    focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
+                                    unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
+                                    focusedLabelColor = GreenMakita,      // Color del label cuando el campo está enfocado
+                                    unfocusedLabelColor = GreenMakita,    // Color del label cuando no está enfocado
+                                    cursorColor = GreenMakita,            // Color del cursor en GreenMakita
+                                ),
                             )
 
                             OutlinedTextField(
@@ -310,11 +397,13 @@ fun UbicacionScreen(username: String) {
                                     fontSize = 20.sp
                                 ),
                                 modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenMakita,
-                                    unfocusedBorderColor = Color.Gray,
-                                    focusedLabelColor = GreenMakita,
-                                    cursorColor = GreenMakita,
+                                    focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
+                                    unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
+                                    focusedLabelColor = GreenMakita,      // Color del label cuando el campo está enfocado
+                                    unfocusedLabelColor = GreenMakita,    // Color del label cuando no está enfocado
+                                    cursorColor = GreenMakita,            // Color del cursor en GreenMakita
                                 )
                             )
                         }
@@ -333,11 +422,13 @@ fun UbicacionScreen(username: String) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenMakita,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = GreenMakita,
-                                cursorColor = GreenMakita,
+                                focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
+                                unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
+                                focusedLabelColor = GreenMakita,      // Color del label cuando el campo está enfocado
+                                unfocusedLabelColor = GreenMakita,    // Color del label cuando no está enfocado
+                                cursorColor = GreenMakita,            // Color del cursor en GreenMakita
                             )
                         )
 
@@ -355,7 +446,7 @@ fun UbicacionScreen(username: String) {
 
                         Spacer(modifier = Modifier.height(16.dp))
                     // se comenta para probar en bodega , solo ubicaciones sin cambio, descomentar despues.
-                 /*       Row(
+                      Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         )
@@ -374,11 +465,13 @@ fun UbicacionScreen(username: String) {
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(end = 8.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenMakita,
-                                    unfocusedBorderColor = Color.Gray,
-                                    focusedLabelColor = GreenMakita,
-                                    cursorColor = GreenMakita,
+                                    focusedBorderColor = GreenMakita,     // Borde al enfocar en GreenMakita
+                                    unfocusedBorderColor = GreenMakita,   // Borde sin enfoque en GreenMakita
+                                    focusedLabelColor = GreenMakita,      // Color del label cuando el campo está enfocado
+                                    unfocusedLabelColor = GreenMakita,    // Color del label cuando no está enfocado
+                                    cursorColor = GreenMakita,            // Color del cursor en GreenMakita
                                 )
                             )
 
@@ -413,8 +506,8 @@ fun UbicacionScreen(username: String) {
                                                         item = ubicacion.item,
                                                         ubicacionAntigua = ubicacion.Ubicacion,
                                                         nuevaUbicacion = nuevaUbicacion.text,
-                                                        tipoItem = response.firstOrNull()?.tipoItem
-                                                            ?: "" // Obtener tipoItem de la primera respuesta
+                                                        tipoItem = response.firstOrNull()?.tipoItem ?: "",
+                                                        operacion = "Cambio ubicacion",
                                                     )
 
                                                 val bitacoraRegistroUbi =
@@ -459,7 +552,7 @@ fun UbicacionScreen(username: String) {
                             ) {
                                 Text(text = "Grabar")
                             }
-                        }*/
+                        }
                     }
                 }
             }
@@ -468,6 +561,7 @@ fun UbicacionScreen(username: String) {
             if (clearRequested) {
 
                 text = TextFieldValue("")
+                secondTextFieldValue = TextFieldValue("")
                 response = emptyList()
                 clearRequested = false
                 errorState = null
@@ -535,6 +629,18 @@ suspend fun bitacoraRegistro(username : String , ubicacion: UbicacionResponse, n
     val bitacoraRegistroUbi =
         apiService.insertaBitacoraUbicacion(
             requestRegistroBitacora
+        )
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun UbicacionScreenPreview() {
+    var username by remember { mutableStateOf("juanito Mena") }
+    // Render de la pantalla
+    UbicacionScreen(
+        username = username,
+
         )
 }
 

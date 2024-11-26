@@ -154,30 +154,33 @@ class MainActivity : ComponentActivity() {
                 UbicacionScreen(username = username )
             }
 
-            composable("picking/{username}") {backStackEntry ->
+            composable("picking/{username}/{area}") {backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
-                CapturaSerieScreen(navController, username)
+                val area = backStackEntry.arguments?.getString("area") ?: ""
+                CapturaSerieScreen(navController, username, area)
             }
 
 
-            composable("cabecera-documento/{item}/{username}") { backStackEntry ->
+            composable("cabecera-documento/{item}/{username}/{area}") { backStackEntry ->
                 val itemJson = backStackEntry.arguments?.getString("item")
                 val username = backStackEntry.arguments?.getString("username") ?: ""
+                val area = backStackEntry.arguments?.getString("area") ?: ""
                 if (itemJson != null) {
                     val pickingItem = Gson().fromJson(itemJson, PickingItem::class.java)
-                    CabeceraDocumentoScreen(navController, pickingItem, username)
+                    CabeceraDocumentoScreen(navController, pickingItem, username , area)
                 } else {
                     // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
                     Log.e("Navigation", "itemJson es null")
                 }
             }
 
-            composable("detalle-documento/{item}/{username}") { backStackEntry ->
+            composable("detalle-documento/{item}/{username}/{area}") { backStackEntry ->
                 val itemJson = backStackEntry.arguments?.getString("item")
                 val username = backStackEntry.arguments?.getString("username") ?: ""
+                val area = backStackEntry.arguments?.getString("area") ?: ""
                 if (itemJson != null) {
                     val pickingItem = Gson().fromJson(itemJson, PickingItem::class.java)
-                    DetalleDocumentoScreen(navController, pickingItem ,username)
+                    DetalleDocumentoScreen(navController, pickingItem ,username,area)
                 } else {
                     // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
                     Log.e("Navigation", "itemJson es null")

@@ -91,6 +91,7 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int , List<
                     loginViewModel.isUsernameFocused.value = it.isFocused
                 }
                 .background(Color.White, shape = RoundedCornerShape(8.dp)),
+            shape = RoundedCornerShape(12.dp),
             textStyle = TextStyle(color = GreenMakita, fontSize = 15.sp, fontWeight = FontWeight.Bold),
             singleLine = true,
 
@@ -124,6 +125,7 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int , List<
                     loginViewModel.isPasswordFocused.value = it.isFocused
                 }
                 .background(Color.White, shape = RoundedCornerShape(8.dp)),
+            shape = RoundedCornerShape(12.dp),
             textStyle = TextStyle(color = GreenMakita, fontSize = 15.sp, fontWeight = FontWeight.Bold),
             singleLine = true,
             trailingIcon = {

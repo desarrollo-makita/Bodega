@@ -80,7 +80,7 @@ val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
 )
 @Composable
-fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usuario: String) {
+fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usuario: String, area : String) {
     val coroutineScope = rememberCoroutineScope()
     var pickingList by remember { mutableStateOf<List<PickingDetalleItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -199,7 +199,8 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 onActualizarClick = {
                 cargarTodaLaData()
             },
-                isEnabled = areAllItemsComplete
+                isEnabled = areAllItemsComplete,
+                area= area
             )
             CapturaScanner(pickingList = pickingList,
                 actualizarPickingList = { nuevaLista ->
@@ -422,7 +423,7 @@ fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
 }
 
 @Composable
-fun FooterProcesar( navController: NavController , usuario: String, onActualizarClick: () -> Unit, isEnabled: Boolean ) {
+fun FooterProcesar( navController: NavController , usuario: String, onActualizarClick: () -> Unit, isEnabled: Boolean , area: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -430,7 +431,7 @@ fun FooterProcesar( navController: NavController , usuario: String, onActualizar
         horizontalArrangement = Arrangement.SpaceEvenly // Espacio uniforme entre los botones
     ) {
         Button(
-            onClick = { procesarDatos(navController , usuario) },
+            onClick = { procesarDatos(navController , usuario ,area) },
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
@@ -487,6 +488,9 @@ fun CapturaScanner(
     var serieFinal by remember { mutableStateOf("") }
     var letraFabrica by remember { mutableStateOf("") }
     var ean by remember { mutableStateOf("") }
+    var digito by remember { mutableStateOf("") }
+    var codigoComercial by remember { mutableStateOf("") }
+    var codigoChile by remember { mutableStateOf("") }
 
 
     val focusRequester = remember { FocusRequester() }
@@ -499,21 +503,21 @@ fun CapturaScanner(
 
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
-            if(textoEntrada.value.text.length > 39){
-               var mockitemScannerType = "DML814              000004158000004159Y0088381733540CLA"
+            if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
+               // var mockitemScannerType = "DML814              000004158000004159Y0088381733540CLA"
 
-                /*itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
                 ean = textoEntrada.value.text.substring(0,20).trim()
-*/
-                itemScannerType = mockitemScannerType.substring(0,20).trim()
+
+         /*       itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 letraFabrica = mockitemScannerType.substring(38,39).trim()
                 ean = mockitemScannerType.substring(0,20).trim()
-
+*/
                 val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
 
                 if (itemDetalle == null) {
@@ -552,7 +556,47 @@ fun CapturaScanner(
                 delay(500)
                 textoEntrada.value = TextFieldValue("")
                 itemScannerType= ""
-            }else{
+            }
+            else if(textoEntrada.value.text.length > 55){
+                Log.d("*MAKITA*","ENTRO TEXTOeNTRADA ${textoEntrada.value.text.length}")
+                //var mockitemScannerType = "999999-9            00000004600000004600088381597463000197363-40000DC18WC000000000000000000000000000000"
+
+                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+                serieInicial = textoEntrada.value.text.substring(20,29).trim()
+                serieFinal = textoEntrada.value.text.substring(29,38).trim()
+                digito = textoEntrada.value.text.substring(38, 39).trim()
+                ean = textoEntrada.value.text.substring(39, 52).trim()
+                codigoComercial = textoEntrada.value.text.substring(53, 63).trim().replace("^0+".toRegex(), "")
+                codigoChile = textoEntrada.value.text.substring(63, 73).trim()
+
+                /*itemScannerType = mockitemScannerType.substring(0,20).trim()
+                serieInicial = mockitemScannerType.substring(20,29).trim()
+                serieFinal = mockitemScannerType.substring(29,38).trim()
+                digito = mockitemScannerType.substring(38, 39).trim()
+                ean = mockitemScannerType.substring(39, 52).trim()
+                codigoComercial = mockitemScannerType.substring(53, 63).trim().replace("^0+".toRegex(), "")
+                codigoChile = mockitemScannerType.substring(63, 73).trim()*/
+
+                val itemDetalle = pickingListState.value.find { it.item == codigoComercial }
+
+                if (itemDetalle == null) {
+                    actualizarMensajeError("El ítem ($codigoComercial) no se encuentra en la lista.")
+                }else {
+
+                    if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
+                        actualizarMensajeError("El ítem ($codigoComercial) ya está completo. No se requiere más cantidad.")
+                    }else if(serieInicial == serieFinal ){ //unitario
+                        val catidadUnitaria = 0
+                        actualizarMensajeError("")
+                        procesarDataUnitario(item ,usuario,pickingListState ,actualizarPickingList ,codigoComercial ,catidadUnitaria,serieInicial ,serieFinal ,
+                            actualizarMensajeError = {
+                                    mensaje -> actualizarMensajeError(mensaje)
+                            }
+                        )
+                    }
+                }
+            }
+            else{
                 actualizarMensajeError("El código escaneado no corresponde.")
             }
         }
@@ -805,7 +849,7 @@ fun LoadingIndicator() {
     }
 }
 
-fun procesarDatos(navController: NavController, usuario: String) {
+fun procesarDatos(navController: NavController, usuario: String, area: String) {
     val capturas = leerArchivoCapturaCompleto()
     val username = usuario
     val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
@@ -813,11 +857,8 @@ fun procesarDatos(navController: NavController, usuario: String) {
 
     val archivo = File(rutaDirectorio, nombreArchivo)
 
-        if (capturas.isNotEmpty()) {
+    if (capturas.isNotEmpty()) {
         val capturaList = InsertCapturaList(data = capturas)
-
-        Log.d("*Makita*", "ArchivoLectura $capturaList")
-
         // Ejecutar la tarea de red en un hilo de fondo
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -833,7 +874,7 @@ fun procesarDatos(navController: NavController, usuario: String) {
 
                     // Cambiar al hilo principal para hacer la navegación
                     withContext(Dispatchers.Main) {
-                        navController.navigate("picking/$username")
+                        navController.navigate("picking/$username/$area")
                     }
                 } else {
                     Log.e("Error Proceso", "Error al enviar datos: ${response.code()} - ${response.message()}")
@@ -918,5 +959,6 @@ val exampleItem = PickingItem(
 )
     val navController = rememberNavController()
     val usuario = "juanito mena"
-    DetalleDocumentoScreen(navController = navController, item = exampleItem , usuario )
+    val area= "Herraminetas"
+    DetalleDocumentoScreen(navController = navController, item = exampleItem , usuario, area )
 }

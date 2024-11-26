@@ -63,7 +63,7 @@ val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
 )
 
 @Composable
-fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem , usuario:String) {
+fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem , usuario:String, area: String) {
     // Fondo degradado
     Box(modifier = Modifier
         .fillMaxSize()
@@ -98,7 +98,7 @@ fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem , u
             TotalItemTextField(item)
             ReadOnlyTextArea(item)
             Separar()
-            Footer(navController , item , usuario)
+            Footer(navController , item , usuario, area)
 
         }
 
@@ -573,7 +573,7 @@ fun ReadOnlyTextArea(item: PickingItem) {
 
 
 @Composable
-fun Footer(navController: NavController , item: PickingItem ,usuario: String ) {
+fun Footer(navController: NavController , item: PickingItem ,usuario: String,area: String ) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Button(
             onClick = { navController.popBackStack() },
@@ -593,7 +593,7 @@ fun Footer(navController: NavController , item: PickingItem ,usuario: String ) {
             onClick = {
                 val itemJson = Gson().toJson(item)
                 val username = usuario
-                navController.navigate("detalle-documento/$itemJson/$username")},
+                navController.navigate("detalle-documento/$itemJson/$username/$area")},
             modifier = Modifier
                 .weight(1f) // Este botón también ocupará el espacio restante
                 .padding(horizontal = 8.dp)
@@ -633,7 +633,8 @@ fun CabeceraDocumentoScreenPreview() {
     // Usar un navController simulado (puedes usar rememberNavController)
     val navController = rememberNavController()
     val user = "juanito mena"
+    val area = "Herraminetas"
 
     // Llamar al composable que deseas previsualizar
-    CabeceraDocumentoScreen(navController = navController, item = exampleItem , usuario=user)
+    CabeceraDocumentoScreen(navController = navController, item = exampleItem , usuario=user,area= area)
 }

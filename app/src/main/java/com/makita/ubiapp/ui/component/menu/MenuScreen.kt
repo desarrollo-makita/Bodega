@@ -98,7 +98,12 @@ fun MenuScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             MenuHeader(nombreUsuario = nombreUsuario, area = area)
-            MenuOptions(navController = navController, nombreUsuario = nombreUsuario , actividades = actividades)
+            MenuOptions(
+                navController = navController,
+                nombreUsuario = nombreUsuario ,
+                actividades = actividades,
+                area = area
+            )
         }
     }
 }
@@ -115,11 +120,18 @@ fun MenuHeader(nombreUsuario: String, area: String) {
     )
 
     Text(
-        text = "Bienvenido: $nombreUsuario",
+        text = "Bienvenido:",
         fontSize = 26.sp,
         fontWeight = FontWeight.Bold,
         color = Color(0xFF004D40),
         modifier = Modifier.padding(top = 12.dp)
+    )
+    Text(
+        text = nombreUsuario,
+        fontSize = 22.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color(0xFF004D40),
+        modifier = Modifier.padding(top = 4.dp) // Espaciado entre las líneas
     )
 
     Text(
@@ -138,7 +150,12 @@ fun MenuHeader(nombreUsuario: String, area: String) {
 }
 
 @Composable
-fun MenuOptions(navController: NavController, nombreUsuario: String , actividades: List<ActividadItem>) {
+fun MenuOptions(
+    navController: NavController,
+    nombreUsuario: String,
+    actividades: List<ActividadItem>,
+    area: String
+) {
     Text(
         text = "¿Qué deseas hacer?",
         fontSize = 22.sp,
@@ -169,7 +186,8 @@ fun MenuOptions(navController: NavController, nombreUsuario: String , actividade
                         navController.navigate("${actividad.ruta}${nombreUsuario}") // O alguna acción relacionada
 
                     }else if(actividad.ruta == "picking/"){
-                        navController.navigate("${actividad.ruta}${nombreUsuario}") // O alguna acción relacionada
+
+                        navController.navigate("${actividad.ruta}$nombreUsuario/$area")
                     }
 
 

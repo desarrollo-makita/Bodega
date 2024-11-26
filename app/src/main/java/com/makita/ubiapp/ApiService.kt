@@ -275,8 +275,8 @@ interface ApiService {
     @POST("api/insertar-info-dispositivo")
     suspend fun insertarInfoDspositivo(@Body request: DataDispositivoRequest): Response<DispositivoResponse>
 
-    @GET("api/get-all-pickingList")
-    suspend fun obtenerPickinglist(): Response<PickingResponse>
+    @GET("api/get-all-pickingList/{area}")
+    suspend fun obtenerPickinglist(@Path("area") area: String): Response<PickingResponse>
 
     @GET("api/get-picking-folio/{folio}")
     suspend fun obtenerPickingFolio(@Path("folio") folio: String):Response <PickingResponse>
