@@ -563,23 +563,23 @@ fun CapturaScanner(
             }
             else if(textoEntrada.value.text.length > 55){
 
-                //var mockitemScannerType = "999999-9            00000004600000004600088381597463000197363-40000DC18WC000000000000000000000000000000"
+                var mockitemScannerType = "999999-9            00000004600000004600088381597463000197363-40000DC18WC000000000000000000000000000000"
 
-                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+                /*itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 digito = textoEntrada.value.text.substring(38, 39).trim()
                 ean = textoEntrada.value.text.substring(39, 52).trim()
                 codigoComercial = textoEntrada.value.text.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = textoEntrada.value.text.substring(63, 73).trim()
-
-                /*itemScannerType = mockitemScannerType.substring(0,20).trim()
+*/
+                itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 digito = mockitemScannerType.substring(38, 39).trim()
                 ean = mockitemScannerType.substring(39, 52).trim()
                 codigoComercial = mockitemScannerType.substring(53, 63).trim().replace("^0+".toRegex(), "")
-                codigoChile = mockitemScannerType.substring(63, 73).trim()*/
+                codigoChile = mockitemScannerType.substring(63, 73).trim()
 
                 val itemDetalle = pickingListState.value.find { it.item == codigoComercial }
 

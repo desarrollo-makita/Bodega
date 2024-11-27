@@ -244,6 +244,10 @@ data class InsertCapturaList(
     val data: List<InsertCaptura>
 )
 
+data class CorrelativoRequest(
+    val correlativo: Int
+)
+
 interface ApiService {
 
     @GET("api/obtener-ubicacion/{ubicacion}")
@@ -287,8 +291,8 @@ interface ApiService {
     @PUT("api/actualiza-glosa-enproceso")
     suspend fun updateCapturaEnProceso(@Body request: DataUpdateCapturaReq): Response<Unit>
 
-    @PUT("api/update-glosa-procesados")
-    suspend fun updateCapturaProcesado(@Body request: DataUpdateCapturaReq): Response<Unit>
+    @PUT("api/update-glosa-solicitado")
+    suspend fun updateCapturaSolicitado(@Body request: CorrelativoRequest): Response<Unit>
 
     @POST("api/insertar-datos-capturados")
     suspend fun insertarCapturasSeries(@Body request: InsertCapturaList): Response<Unit>

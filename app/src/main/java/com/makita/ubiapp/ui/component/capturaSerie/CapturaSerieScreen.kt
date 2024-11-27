@@ -11,8 +11,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -34,12 +36,18 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
+import com.makita.ubiapp.CorrelativoRequest
+import com.makita.ubiapp.DataUpdateCapturaReq
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
 import com.makita.ubiapp.ui.theme.GreenMakita
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -51,14 +59,42 @@ val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
 )
 @Composable
 fun CapturaSerieScreen(navController: NavController, username:String , area : String) {
-    Log.d("*MAKITA*" , "entroooo : $area")
+
     var folioText by remember { mutableStateOf("") }
     var pickingList by remember { mutableStateOf<List<PickingItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
     val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
+
     var usuarioActivo by remember { mutableStateOf<String?>(username) }
     var area1 by remember { mutableStateOf<String?>(area) }
+
+    var showDialog by remember { mutableStateOf(false) }
+    var mensajeDialogo by remember { mutableStateOf("") }
+    var itemPendiente by remember { mutableStateOf<PickingItem?>(null) }
+
+    fun verificarDatosPendientes(pickingList: List<PickingItem>): PickingItem? {
+        val rutaArchivo = "/data/data/com.makita.ubiapp/files/picking_data_capturados.txt"
+        val lineasArchivo = leerArchivo(rutaArchivo)
+
+        pickingList.forEach { item ->
+            val correlativo = item.CorrelativoOrigen.toString()
+            // Verificar si el correlativo ya existe en el archivo
+            val existeEnArchivo = lineasArchivo.any { it.split(";")[12] == correlativo }
+            Log.d("*PROCESO CAPTURA**", "RESULTADA _ : $existeEnArchivo")
+
+            if (existeEnArchivo) {
+                mensajeDialogo = "El Correlativo $correlativo tiene procesos pendientes ¿Deseas Procesar?"
+                showDialog = true
+                itemPendiente = item
+                return item // Retorna el primer item encontrado
+            }
+        }
+
+        // Si no se encuentra ningún item con procesos pendientes, retorna null
+        return null
+    }
+
 
     fun cargarTodaLaData() {
         isLoading = true
@@ -69,7 +105,8 @@ fun CapturaSerieScreen(navController: NavController, username:String , area : St
                 if (response.isSuccessful && response.body() != null) {
                     pickingList = response.body()!!.data
                     errorMessage = null
-                    Log.d("*MAKITA*", "CapturaSerieScreen obtenerPickinglist ${pickingList}")
+                    verificarDatosPendientes(pickingList!!)
+
                 } else {
                     errorMessage = "Error al obtener los datos: ${response.code()}"
                 }
@@ -84,6 +121,40 @@ fun CapturaSerieScreen(navController: NavController, username:String , area : St
     // Llama a cargarTodaLaData al entrar a CapturaSerieScreen
     LaunchedEffect(Unit) {
         cargarTodaLaData()
+    }
+
+    if (showDialog && itemPendiente != null) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Alerta") },
+            text = { Text(mensajeDialogo) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDialog = false
+                        navController.navigate("cabecera-documento/${Gson().toJson(itemPendiente)}/$username/$area")
+                },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00909E)  // Color de fondo del botón
+                    )
+                ) {
+                    Text("Procesar")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        eliminarArchivo("/data/data/com.makita.ubiapp/files/picking_data_capturados.txt" ,
+                            itemPendiente!!
+                        )
+                        showDialog = false
+                },colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00909E)  // Color de fondo del botón
+                    )) {
+                    Text("Ignorar")
+                }
+            }
+        )
     }
 
     val fetchPickingListByFolio: (String) -> Unit = { folioValue ->
@@ -261,6 +332,38 @@ fun EscanearItemTextField(
     )
 }
 
+fun leerArchivo(rutaArchivo: String): List<String> {
+    return try {
+        File(rutaArchivo).readLines()
+    } catch (e: Exception) {
+        Log.e("Error", "No se pudo leer el archivo: ${e.localizedMessage}")
+        emptyList()
+    }
+}
+
+// Función para eliminar el archivo
+fun eliminarArchivo(rutaArchivo: String, itemPendiente : PickingItem) {
+    try {
+        CoroutineScope(Dispatchers.IO).launch {
+
+            val request = CorrelativoRequest(itemPendiente.correlativo)
+            RetrofitClient.apiService.updateCapturaSolicitado(request)
+
+        }
+        val archivo = File(rutaArchivo)
+        if (archivo.exists()) {
+            val eliminado = archivo.delete()
+            if (eliminado) {
+                Log.d("ELIMINAR", "Archivo eliminado correctamente.")
+            } else {
+                Log.e("ELIMINAR", "No se pudo eliminar el archivo.")
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("ELIMINAR", "Error al eliminar el archivo: ${e.localizedMessage}")
+    }
+}
+
 @Composable
 fun PickingListTable(navController: NavController,
                      pickingList: List<PickingItem>? ,
@@ -321,6 +424,7 @@ fun PickingListTable(navController: NavController,
                                     .clickable {
                                         if (index == 0) { // Solo permitir clics en el primer campo
                                             val itemJson = Gson().toJson(item) // Serializa el objeto PickingItem a JSON
+                                            Log.d("*MAKITA", "$itemJson $usuarioActivo $area")
                                             navController.navigate("cabecera-documento/$itemJson/$usuarioActivo/$area")
                                         }
                                     },
@@ -413,6 +517,8 @@ fun formatDate(isoDate: String): String {
     val localDateTime = LocalDateTime.parse(isoDate, formatter)
     return localDateTime.toLocalDate().toString() // Solo devuelve la parte de la fecha
 }
+
+
 @Preview(showBackground = true)
 @Composable
 fun CapturaSerieScreenView() {
