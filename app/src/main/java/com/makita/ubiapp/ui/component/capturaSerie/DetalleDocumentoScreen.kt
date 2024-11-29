@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 
@@ -351,10 +352,10 @@ fun ItemListTable(
         username: String ,
         area: String) {
 
-
+    val showDialog = remember { mutableStateOf(false) }
+    val itemToShowMessage = remember { mutableStateOf<PickingDetalleItem?>(null) }
 
     val headers = listOf("Item", "Descripcion", "Cantidad", "Cantidad Pedido", "Tipo Documento", "Tipo Item", "Unidad", "Ubicacion")
-
     val fields = listOf<(PickingDetalleItem) -> String>(
         { item -> item.item ?: "Sin item" },
         { item -> item.Descripcion ?: "Sin descripción" },
@@ -433,12 +434,16 @@ fun ItemListTable(
                                     .let { baseModifier ->
                                         if (index == 0) { // Solo permitir clics en el primer campo
                                             baseModifier.clickable {
-                                                val itemJson = Gson().toJson(item) // Serializa el objeto PickingItem a JSON
-                                                Log.d("*MAKITA*", "$correlativoOrigen")
-                                                Log.d("*MAKITA*", "$correlativo")
-
-                                                navController.navigate("procesar-sin-codigo-barra/$itemJson/${correlativoOrigen.toString()}/${correlativo.toString()}/$username/$area")
-                                                                   }
+                                                if (item.Cantidad == item.CantidadPedida) {
+                                                    // Si la cantidad es igual a la cantidad pedida, mostramos el modal
+                                                    itemToShowMessage.value = item
+                                                    showDialog.value = true
+                                                } else {
+                                                    // Si la validación pasa, navegar al siguiente componente
+                                                    val itemJson = Gson().toJson(item) // Serializamos el objeto
+                                                    navController.navigate("procesar-sin-codigo-barra/$itemJson/${correlativoOrigen.toString()}/${correlativo.toString()}/$username/$area")
+                                                }
+                                            }
 
                                         } else baseModifier // Sin clickable para otros campos
                                     },
@@ -451,6 +456,23 @@ fun ItemListTable(
             }
         }
     }
+    if (showDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDialog.value = false },
+            title = { Text("Alerta") },
+            text = { Text("No se puede procesar este ítem porque la cantidad ya está completa.") },
+            confirmButton = {
+                Button(
+                    onClick = { showDialog.value = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00909E)),
+                ) {
+                    Text("Aceptar")
+                }
+
+            }
+        )
+    }
+
 }
 
 @Composable
