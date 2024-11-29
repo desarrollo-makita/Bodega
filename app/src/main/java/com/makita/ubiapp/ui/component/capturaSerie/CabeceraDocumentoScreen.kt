@@ -1,6 +1,5 @@
 package com.makita.ubiapp.ui.component.capturaSerie
 
-import android.util.Log
 import androidx.compose.foundation.background
 
 import androidx.compose.foundation.layout.Arrangement

@@ -2,6 +2,7 @@ package com.makita.ubiapp.ui.component.capturaSerie
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 
 import androidx.compose.foundation.horizontalScroll
 
@@ -57,7 +58,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.gson.Gson
 import com.makita.ubiapp.DataUpdateCapturaReq
 import com.makita.ubiapp.InsertCaptura
 import com.makita.ubiapp.InsertCapturaList
@@ -105,7 +108,6 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
 
                         // Sumar la cantidad encontrada al valor actual de Cantidad
                         val nuevaCantidad = detalleItem.Cantidad + cantidadEncontrada
-                        println("Para el item '${detalleItem.item}', cantidad inicial: ${detalleItem.Cantidad}, cantidad encontrada: $cantidadEncontrada, nueva cantidad: $nuevaCantidad")
 
                         // Si necesitas actualizar `Cantidad` en el objeto original:
                         detalleItem.Cantidad = nuevaCantidad
@@ -177,7 +179,13 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
             if(isLoading){
             LoadingIndicator()
         }
-            ItemListTable(pickingList)
+            ItemListTable(
+                navController,
+                pickingList,
+                item.CorrelativoOrigen,
+                item.correlativo,
+                usuario,
+                area)
         }
 
         // Pie de página
@@ -335,7 +343,16 @@ fun SepararDetalle(){
 }
 
 @Composable
-fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
+fun ItemListTable(
+        navController: NavController,
+        pickingList: List<PickingDetalleItem>?,
+        correlativoOrigen : Int,
+        correlativo: Int,
+        username: String ,
+        area: String) {
+
+
+
     val headers = listOf("Item", "Descripcion", "Cantidad", "Cantidad Pedido", "Tipo Documento", "Tipo Item", "Unidad", "Ubicacion")
 
     val fields = listOf<(PickingDetalleItem) -> String>(
@@ -374,7 +391,7 @@ fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White, shape = RoundedCornerShape(5.dp))
-                    .padding(vertical = 5.dp)
+                   .padding(vertical = 5.dp)
             ) {
                 headers.forEach { header ->
                     Text(
@@ -404,13 +421,27 @@ fun ItemListTable(pickingList: List<PickingDetalleItem>?) {
                             .fillMaxWidth()
                             .background(backgroundColor)
                             .padding(vertical = 5.dp)
-                    ) {
-                        fields.forEach { field ->
+                    ){
+                        fields.forEachIndexed { index, field ->
+                            val textColor = if (index == 0) Color.Blue else Color.Black
                             Text(
                                 text = field(item),
+                                color = textColor,
                                 modifier = Modifier
                                     .width(100.dp)
-                                    .padding(horizontal = 5.dp),
+                                    .padding(horizontal = 5.dp)
+                                    .let { baseModifier ->
+                                        if (index == 0) { // Solo permitir clics en el primer campo
+                                            baseModifier.clickable {
+                                                val itemJson = Gson().toJson(item) // Serializa el objeto PickingItem a JSON
+                                                Log.d("*MAKITA*", "$correlativoOrigen")
+                                                Log.d("*MAKITA*", "$correlativo")
+
+                                                navController.navigate("procesar-sin-codigo-barra/$itemJson/${correlativoOrigen.toString()}/${correlativo.toString()}/$username/$area")
+                                                                   }
+
+                                        } else baseModifier // Sin clickable para otros campos
+                                    },
                                 fontSize = 12.sp,
                                 maxLines = 2
                             )
@@ -505,20 +536,21 @@ fun CapturaScanner(
         if (textoEntrada.value.text.isNotEmpty()) {
             Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length}")
             if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
-               // var mockitemScannerType = "DML814              000004158000004159Y0088381733540CLA"
+                var mockitemScannerType = "SJ401               000004158000004158Y0088381733540CLA"
 
-                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+             /*   itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
                 ean = textoEntrada.value.text.substring(0,20).trim()
+*/
 
-         /*       itemScannerType = mockitemScannerType.substring(0,20).trim()
+                itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 letraFabrica = mockitemScannerType.substring(38,39).trim()
                 ean = mockitemScannerType.substring(0,20).trim()
-*/
+
                 val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
 
                 if (itemDetalle == null) {
@@ -563,24 +595,24 @@ fun CapturaScanner(
             }
             else if(textoEntrada.value.text.length > 55){
 
-                var mockitemScannerType = "999999-9            00000004600000004600088381597463000197363-40000DC18WC000000000000000000000000000000"
+               // var mockitemScannerType = "999999-9            00000004600000004600088381597463000197363-40000DC18WC000000000000000000000000000000"
 
-                /*itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 digito = textoEntrada.value.text.substring(38, 39).trim()
                 ean = textoEntrada.value.text.substring(39, 52).trim()
                 codigoComercial = textoEntrada.value.text.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = textoEntrada.value.text.substring(63, 73).trim()
-*/
-                itemScannerType = mockitemScannerType.substring(0,20).trim()
+
+            /*    itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 digito = mockitemScannerType.substring(38, 39).trim()
                 ean = mockitemScannerType.substring(39, 52).trim()
                 codigoComercial = mockitemScannerType.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = mockitemScannerType.substring(63, 73).trim()
-
+*/
                 val itemDetalle = pickingListState.value.find { it.item == codigoComercial }
 
                 if (itemDetalle == null) {

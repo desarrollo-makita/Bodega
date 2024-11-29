@@ -18,6 +18,7 @@ import androidx.navigation.navArgument
 import com.google.gson.Gson
 import com.makita.ubiapp.ui.component.capturaSerie.CabeceraDocumentoScreen
 import com.makita.ubiapp.ui.component.capturaSerie.DetalleDocumentoScreen
+import com.makita.ubiapp.ui.component.capturaSerie.ProcesarSinCodigoBarraScreen
 import com.makita.ubiapp.ui.component.login.LoginScreen
 import com.makita.ubiapp.ui.component.ubicaciones.CapturaSerieScreen
 import com.makita.ubiapp.ui.component.ubicaciones.UbicacionScreen
@@ -176,6 +177,7 @@ class MainActivity : ComponentActivity() {
 
             composable("detalle-documento/{item}/{username}/{area}") { backStackEntry ->
                 val itemJson = backStackEntry.arguments?.getString("item")
+
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
                 if (itemJson != null) {
@@ -185,6 +187,24 @@ class MainActivity : ComponentActivity() {
                     // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
                     Log.e("Navigation", "itemJson es null")
                 }
+            }
+
+            composable("procesar-sin-codigo-barra/{item}/{correlativoOrigen}/{correlativo}/{username}/{area}") { backStackEntry ->
+
+                val itemJson = backStackEntry.arguments?.getString("item")
+                val correlativoOrigen = backStackEntry.arguments?.getString("correlativoOrigen")?.toIntOrNull() ?: 0
+                val correlativo = backStackEntry.arguments?.getString("correlativo")?.toIntOrNull() ?: 0
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                val area = backStackEntry.arguments?.getString("area") ?: ""
+
+                Log.d("*MAKITA" , "correlativoOrigenXXX :  ${correlativoOrigen}")
+                Log.d("*MAKITA" , "correlativoOrigenXXX :  ${correlativo}")
+
+                if (itemJson != null) {
+                    val pickingItem = Gson().fromJson(itemJson, PickingDetalleItem::class.java)
+                    ProcesarSinCodigoBarraScreen(navController , pickingItem, correlativoOrigen , correlativo , username, area)
+                }
+
             }
 
         }
