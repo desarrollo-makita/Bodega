@@ -248,6 +248,12 @@ data class CorrelativoRequest(
     val correlativo: Int
 )
 
+data class ItemResponse(
+    var item: String,
+    var descripcion: String,
+    var CodigoChile1: String
+)
+
 interface ApiService {
 
     @GET("api/obtener-ubicacion/{ubicacion}")
@@ -296,5 +302,8 @@ interface ApiService {
 
     @POST("api/insertar-datos-capturados")
     suspend fun insertarCapturasSeries(@Body request: InsertCapturaList): Response<Unit>
+    @GET("api/generar-etiquetaC/{item}")
+    suspend fun obtenerHerramienta(@Path("item") item: String) : List<ItemResponse>
+
 
 }

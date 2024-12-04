@@ -19,6 +19,7 @@ import com.google.gson.Gson
 import com.makita.ubiapp.ui.component.capturaSerie.CabeceraDocumentoScreen
 import com.makita.ubiapp.ui.component.capturaSerie.DetalleDocumentoScreen
 import com.makita.ubiapp.ui.component.capturaSerie.ProcesarSinCodigoBarraScreen
+import com.makita.ubiapp.ui.component.etiquetas.EtiquetasScreen
 import com.makita.ubiapp.ui.component.login.LoginScreen
 import com.makita.ubiapp.ui.component.ubicaciones.CapturaSerieScreen
 import com.makita.ubiapp.ui.component.ubicaciones.UbicacionScreen
@@ -197,14 +198,15 @@ class MainActivity : ComponentActivity() {
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
 
-                Log.d("*MAKITA" , "correlativoOrigenXXX :  ${correlativoOrigen}")
-                Log.d("*MAKITA" , "correlativoOrigenXXX :  ${correlativo}")
-
                 if (itemJson != null) {
                     val pickingItem = Gson().fromJson(itemJson, PickingDetalleItem::class.java)
                     ProcesarSinCodigoBarraScreen(navController , pickingItem, correlativoOrigen , correlativo , username, area)
                 }
 
+            }
+
+            composable("etiquetado/") { backStackEntry ->
+                EtiquetasScreen()
             }
 
         }

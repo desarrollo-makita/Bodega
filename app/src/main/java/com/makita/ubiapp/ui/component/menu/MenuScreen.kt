@@ -46,16 +46,7 @@ fun MenuScreen(
     navController: NavController
 ) {
 
-    Log.d("*MAKITA*" , "MenuScreen Iniciando composable MenuScreen")
-
-    Log.d("*MAKITA*" , "MenuScreen- inicio(nombreUsuario :) $nombreUsuario")
-    Log.d("*MAKITA*" , "MenuScreen- inicio(area :) $area")
-    Log.d("*MAKITA*" , "MenuScreen- inicio(vigencia :) $vigencia")
-    Log.d("*MAKITA*" , "MenuScreen- inicio(idUsuario :) $idUsuario")
-    Log.d("*MAKITA*" , "MenuScreen- inicio(token :) $token")
-    Log.d("*MAKITA*" , "MenuScreen- inicio(actividades:) $actividades")
-
-    val scrollState = rememberScrollState()
+  val scrollState = rememberScrollState()
     var showVigenciaDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(vigencia) {
@@ -188,6 +179,10 @@ fun MenuOptions(
                     }else if(actividad.ruta == "picking/"){
 
                         navController.navigate("${actividad.ruta}$nombreUsuario/$area")
+                    }
+                    else if(actividad.ruta == "etiquetado/"){
+
+                        navController.navigate("${actividad.ruta}")
                     }
 
 
