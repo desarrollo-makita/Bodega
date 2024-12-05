@@ -31,6 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -68,6 +69,7 @@ import com.makita.ubiapp.InsertCapturaList
 import com.makita.ubiapp.PickingDetalleItem
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
+import com.makita.ubiapp.ui.component.ubicaciones.eliminarArchivo
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +77,7 @@ import kotlinx.coroutines.delay
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -89,8 +92,32 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
     var pickingList by remember { mutableStateOf<List<PickingDetalleItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
-
+    var mensajeDialogo by remember { mutableStateOf("") }
     val areAllItemsComplete = pickingList?.all { it.Cantidad == it.CantidadPedida } == true
+
+    var showDialogErrorVacio by remember { mutableStateOf(false) }
+
+    if (showDialogErrorVacio) {
+        AlertDialog(
+            onDismissRequest = { showDialogErrorVacio = false },
+            title = { Text("Alerta") },
+            text = { Text(mensajeDialogo) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDialogErrorVacio = false
+                        navController.navigate("picking/$usuario/$area")
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00909E)  // Color de fondo del botón
+                    )
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {}
+        )
+    }
 
     fun cargarTodaLaData(){
         isLoading = true
@@ -117,7 +144,13 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                     // Imprimir el resultado final de la lista modificada
                     println("Lista actualizada: $pickingList")
                 } else {
-                    errorMessage = "Error al obtener los datos: ${response.code()}"
+                    val jsonError = JSONObject(response.errorBody()?.string())
+
+                    errorMessage = jsonError.getString("error")
+                    println("Error al obtener los datos: $errorMessage")
+
+                    mensajeDialogo = errorMessage as String
+                    showDialogErrorVacio = true
                 }
             } catch (e: Exception) {
                 errorMessage = "Error de red: ${e.localizedMessage}"
@@ -125,6 +158,8 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 isLoading = false
             }
         }
+
+
     }
 
     LaunchedEffect(Unit) {
@@ -223,6 +258,8 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
         }
     }
 }
+
+
 
 @Composable
 fun HeaderDetalle(item: PickingItem , errorMessage: String?) {
@@ -952,7 +989,6 @@ fun procesarDatos(navController: NavController, usuario: String, area: String) {
         Log.e("Archivo", "No se encontraron datos en el archivo.")
     }
 }
-
 
 fun leerArchivoCapturaCompleto(): List<InsertCaptura> {
     val rutaDirectorio = "/data/data/com.makita.ubiapp/files"

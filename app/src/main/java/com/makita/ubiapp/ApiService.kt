@@ -215,7 +215,8 @@ data class PickingDetalleItem(
 
 data class PickingDetalleResponse(
     val status: Int,
-    val data: List<PickingDetalleItem>
+    val data: List<PickingDetalleItem>,
+    val error: String
 )
 
 data class DataUpdateCapturaReq(
