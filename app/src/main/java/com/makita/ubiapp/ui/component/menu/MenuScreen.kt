@@ -31,8 +31,11 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextAlign
+import com.google.gson.Gson
 
 import com.makita.ubiapp.ActividadItem
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 
 @Composable
@@ -92,8 +95,11 @@ fun MenuScreen(
             MenuOptions(
                 navController = navController,
                 nombreUsuario = nombreUsuario ,
+                area = area,
+                vigencia = vigencia,
+                idUsuario = idUsuario,
+                token = token,
                 actividades = actividades,
-                area = area
             )
         }
     }
@@ -144,8 +150,11 @@ fun MenuHeader(nombreUsuario: String, area: String) {
 fun MenuOptions(
     navController: NavController,
     nombreUsuario: String,
+    area: String,
+    vigencia: Long,
+    idUsuario: Int,
+    token: String,
     actividades: List<ActividadItem>,
-    area: String
 ) {
     Text(
         text = "¿Qué deseas hacer?",
@@ -178,7 +187,10 @@ fun MenuOptions(
 
                     }else if(actividad.ruta == "picking/"){
 
-                        navController.navigate("${actividad.ruta}$nombreUsuario/$area")
+                        val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
+
+                        navController.navigate("${actividad.ruta}$nombreUsuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
                     }
                     else if(actividad.ruta == "etiquetado/"){
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
+import com.makita.ubiapp.ActividadItem
 import com.makita.ubiapp.CorrelativoRequest
 import com.makita.ubiapp.DataUpdateCapturaReq
 import com.makita.ubiapp.PickingItem
@@ -48,23 +49,26 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-
-// conserva los datos cuando cambia de orientacion el dispositivo
-val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
-    save = { it.text }, // Guarda solo el texto
-    restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
-)
 @Composable
-fun CapturaSerieScreen(navController: NavController, username:String , area : String) {
+fun CapturaSerieScreen(navController: NavController,
+                       username:String ,
+                       area : String,
+                       vigencia : Long ,
+                       idUsuario : Int ,
+                       token: String,
+                       actividades: List<ActividadItem>) {
 
     var folioText by remember { mutableStateOf("") }
     var pickingList by remember { mutableStateOf<List<PickingItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
     val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
+
 
     var usuarioActivo by remember { mutableStateOf<String?>(username) }
     var area1 by remember { mutableStateOf<String?>(area) }
@@ -239,7 +243,7 @@ fun CapturaSerieScreen(navController: NavController, username:String , area : St
                         .padding(start = 30.dp) // Menor margen
                 )
                     {
-                        PickingListTable(navController, pickingList , usuarioActivo , area1 )
+                        PickingListTable(navController, pickingList , usuarioActivo , area1, vigencia , idUsuario, token , actividades )
                     }
             }
 
@@ -247,7 +251,7 @@ fun CapturaSerieScreen(navController: NavController, username:String , area : St
             Footer(navController, onActualizarClick = {
                 cargarTodaLaData()
                 folioText= ""
-            })
+            },username , area ,vigencia , idUsuario, token , actividades)
         }
     }
 }
@@ -368,7 +372,11 @@ fun eliminarArchivo(rutaArchivo: String, itemPendiente : PickingItem) {
 fun PickingListTable(navController: NavController,
                      pickingList: List<PickingItem>? ,
                      usuarioActivo : String?,
-                     area : String?) {
+                     area : String?,
+                     vigencia :Long,
+                     idUsuario: Int,
+                     token: String,
+                     actividades: List<ActividadItem>) {
     Log.d("*MAKITA*", ": $pickingList")
 
     // Definir las cabeceras y los campos que deseas mostrar
@@ -424,8 +432,10 @@ fun PickingListTable(navController: NavController,
                                     .clickable {
                                         if (index == 0) { // Solo permitir clics en el primer campo
                                             val itemJson = Gson().toJson(item) // Serializa el objeto PickingItem a JSON
+                                            val actividadesJson = Gson().toJson(actividades)
+                                            val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                                             Log.d("*MAKITA", "$itemJson $usuarioActivo $area")
-                                            navController.navigate("cabecera-documento/$itemJson/$usuarioActivo/$area")
+                                            navController.navigate("cabecera-documento/$itemJson/$usuarioActivo/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
                                         }
                                     },
                                 fontSize = 12.sp,
@@ -442,24 +452,31 @@ fun PickingListTable(navController: NavController,
 
 
 @Composable
-fun Footer(navController: NavController, onActualizarClick: () -> Unit) {
+fun Footer(navController: NavController, onActualizarClick: () -> Unit,
+           username: String,
+           area: String,
+           vigencia :Long,
+           idUsuario: Int,
+           token: String,
+           actividades: List<ActividadItem>) {
     Box(
         modifier = Modifier
             .fillMaxSize() // Ocupa todo el tamaño de la pantalla
-            .padding(bottom = 16.dp) // Padding inferior para dar espacio a los botones
+            .padding(bottom = 16.dp)
     ) {
-        // Este contenido será el resto de la pantalla
-        // Aquí puedes agregar otros elementos, como listas o texto.
-        Spacer(modifier = Modifier.fillMaxSize()) // Para asegurarse que los botones no se muevan con el contenido
 
-        // Los botones flotantes
+        Spacer(modifier = Modifier.fillMaxSize())
         Row(
             modifier = Modifier
-                .align(Alignment.BottomCenter) // Alinea los botones en la parte inferior central
-                .padding(horizontal = 16.dp) // Padding horizontal general
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 16.dp)
         ) {
             Button(
-                onClick = { navController.popBackStack() },
+                onClick = {
+                    val actividadesJson = Gson().toJson(actividades)
+                    val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
+                    navController.navigate("menu/$username/$area/$vigencia/$idUsuario/$token/0/$actividadesJsonEncoded")
+                },
                 modifier = Modifier
                     .weight(1f) // Ocupa el espacio disponible
                     .padding(end = 8.dp),
@@ -473,10 +490,10 @@ fun Footer(navController: NavController, onActualizarClick: () -> Unit) {
             Button(
                 onClick = { onActualizarClick() },
                 modifier = Modifier
-                    .weight(1f) // Ocupa el espacio disponible
+                    .weight(1f)
                     .padding(start = 8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00909E)  // Color de fondo del botón
+                    containerColor = Color(0xFF00909E)
                 )
             ) {
                 Text("Actualizar", color = Color.White)
@@ -525,7 +542,7 @@ fun CapturaSerieScreenView() {
     val navController = rememberNavController()
     val usuario = "juanito Mena"
     val area = "Accesorios"
-    CapturaSerieScreen(navController = navController , usuario , area)
+   // CapturaSerieScreen(navController = navController , usuario , area)
 }
 
 

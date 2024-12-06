@@ -63,6 +63,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
+import com.makita.ubiapp.ActividadItem
 import com.makita.ubiapp.DataUpdateCapturaReq
 import com.makita.ubiapp.InsertCaptura
 import com.makita.ubiapp.InsertCapturaList
@@ -79,6 +80,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -87,7 +90,10 @@ val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
     restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
 )
 @Composable
-fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usuario: String, area : String) {
+fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usuario: String, area : String, vigencia : Long ,
+                           idUsuario : Int ,
+                           token: String,
+                           actividades: List<ActividadItem>) {
     val coroutineScope = rememberCoroutineScope()
     var pickingList by remember { mutableStateOf<List<PickingDetalleItem>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -105,8 +111,10 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
             confirmButton = {
                 Button(
                     onClick = {
+                         val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                         showDialogErrorVacio = false
-                        navController.navigate("picking/$usuario/$area")
+                        navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF00909E)  // Color de fondo del botón
@@ -1061,5 +1069,5 @@ val exampleItem = PickingItem(
     val navController = rememberNavController()
     val usuario = "juanito mena"
     val area= "Herraminetas"
-    DetalleDocumentoScreen(navController = navController, item = exampleItem , usuario, area )
+    //DetalleDocumentoScreen(navController = navController, item = exampleItem , usuario, area )
 }

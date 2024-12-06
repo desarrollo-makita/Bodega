@@ -51,8 +51,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
+import com.makita.ubiapp.ActividadItem
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.ui.theme.GreenMakita
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 
 // conserva los datos cuando cambia de orientacion el dispositivo
@@ -62,7 +65,10 @@ val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
 )
 
 @Composable
-fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem , usuario:String, area: String) {
+fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem , usuario:String, area: String, vigencia : Long ,
+                            idUsuario : Int ,
+                            token: String,
+                            actividades : List<ActividadItem>) {
     // Fondo degradado
     Box(modifier = Modifier
         .fillMaxSize()
@@ -97,7 +103,7 @@ fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem , u
             TotalItemTextField(item)
             ReadOnlyTextArea(item)
             Separar()
-            Footer(navController , item , usuario, area)
+            Footer(navController , item , usuario, area , vigencia, idUsuario , token ,actividades)
 
         }
 
@@ -572,7 +578,7 @@ fun ReadOnlyTextArea(item: PickingItem) {
 
 
 @Composable
-fun Footer(navController: NavController , item: PickingItem ,usuario: String,area: String ) {
+fun Footer(navController: NavController , item: PickingItem ,usuario: String,area: String , vigencia: Long, idUsuario: Int, token: String, actividades: List<ActividadItem>) {
     Row(modifier = Modifier.fillMaxWidth()) {
         Button(
             onClick = { navController.popBackStack() },
@@ -591,8 +597,10 @@ fun Footer(navController: NavController , item: PickingItem ,usuario: String,are
         Button(
             onClick = {
                 val itemJson = Gson().toJson(item)
+                val actividadesJson = Gson().toJson(actividades)
+                val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                 val username = usuario
-                navController.navigate("detalle-documento/$itemJson/$username/$area")},
+                navController.navigate("detalle-documento/$itemJson/$username/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")},
             modifier = Modifier
                 .weight(1f) // Este botón también ocupará el espacio restante
                 .padding(horizontal = 8.dp)
@@ -635,5 +643,5 @@ fun CabeceraDocumentoScreenPreview() {
     val area = "Herraminetas"
 
     // Llamar al composable que deseas previsualizar
-    CabeceraDocumentoScreen(navController = navController, item = exampleItem , usuario=user,area= area)
+   // CabeceraDocumentoScreen(navController = navController, item = exampleItem , usuario=user,area= area)
 }

@@ -69,24 +69,18 @@ class MainActivity : ComponentActivity() {
                     onLoginSuccess = { username, area ,vigencia,idUsuario ,token , recuperarClave, actividades ->
 
                         DeviceInfoUtil.registrarInformacionDispositivo(context = this@MainActivity, nombreUsuario = username)
-                        Log.d("*MAKITA*" , "MainActivity- LoginScreen(username :) $username")
-                        Log.d("*MAKITA*" , "MainActivity- LoginScreen(area :) $area|")
-                        Log.d("*MAKITA*" , "MainActivity- LoginScreen(vigencia :) $vigencia")
-                        Log.d("*MAKITA*" , "MainActivity- LoginScreen(idUsuario :) $idUsuario")
-                        Log.d("*MAKITA*" , "MainActivity- LoginScreen(token :) $token")
-                        Log.d("*MAKITA*" , "MainActivity- LoginScreen(recuperarClave :) $recuperarClave")
-                        Log.d("*MAKITA*" , "MainActivity- LoginScreen(actividades:) $actividades")
+
                         if(recuperarClave === 1){
                             Log.d("*MAKITA" , "MainActivity- if")
                             showPasswordDialog = true
                             userIdForDialog = idUsuario.toInt()
                             usernameDialog = username
                         }else{
-                            Log.d("*MAKITA*" , "MainActivity- else")
+
                             val gson = Gson()
-                            Log.d("*MAKITA*" , "MainActivity- gson $gson")
+
                             val actividadesJson = gson.toJson(actividades)
-                            Log.d("*MAKITA*" , "MainActivity- actividadesJson $actividadesJson")
+
                             val actividadesJsonEncoded = Uri.encode(gson.toJson(actividades))
                             navController.navigate("menu/$username/$area/$vigencia/$idUsuario/$token/$recuperarClave/$actividadesJsonEncoded")
                         }
@@ -107,10 +101,6 @@ class MainActivity : ComponentActivity() {
                 )
             ) { backStackEntry ->
 
-                // Logging for debugging purposes
-                Log.d("*MainActivity", "Navigating to MenuScreen")
-
-                // Extracting arguments
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
                 val idUsuarioString = backStackEntry.arguments?.getString("idUsuario") ?: "0"
@@ -124,7 +114,6 @@ class MainActivity : ComponentActivity() {
 
                 // Check if actividadesJson is valid before deserializing
                 if (!actividadesJson.isNullOrEmpty()) {
-                    Log.d("MainActivity", "Deserializing actividadesJson: $actividadesJson")
 
                     // Safe deserialization of actividadesJson
                     val gson = Gson()
@@ -156,34 +145,52 @@ class MainActivity : ComponentActivity() {
                 UbicacionScreen(username = username )
             }
 
-            composable("picking/{username}/{area}") {backStackEntry ->
+            composable("picking/{username}/{area}/{vigencia}/{idusuario}/{token}/{actividadesJson}") {backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
-                CapturaSerieScreen(navController, username, area)
+                val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
+                val vigencia = backStackEntry.arguments?.getString("vigencia")?.toLongOrNull() ?: 0L
+                val token = backStackEntry.arguments?.getString("token") ?: ""
+                val actividadesJson = backStackEntry.arguments?.getString("actividadesJson") ?: ""
+                val actividades = Gson().fromJson(actividadesJson, Array<ActividadItem>::class.java).toList()
+
+                CapturaSerieScreen(navController, username, area, vigencia, idUsuario,token, actividades)
             }
 
 
-            composable("cabecera-documento/{item}/{username}/{area}") { backStackEntry ->
+            composable("cabecera-documento/{item}/{username}/{area}/{vigencia}/{idusuario}/{token}/{actividadesJson}") { backStackEntry ->
                 val itemJson = backStackEntry.arguments?.getString("item")
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
+                val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
+                val vigencia = backStackEntry.arguments?.getString("vigencia")?.toLongOrNull() ?: 0L
+                val token = backStackEntry.arguments?.getString("token") ?: ""
+                val actividadesJson = backStackEntry.arguments?.getString("actividadesJson") ?: ""
+                val actividades = Gson().fromJson(actividadesJson, Array<ActividadItem>::class.java).toList()
                 if (itemJson != null) {
                     val pickingItem = Gson().fromJson(itemJson, PickingItem::class.java)
-                    CabeceraDocumentoScreen(navController, pickingItem, username , area)
+                    CabeceraDocumentoScreen(navController, pickingItem, username , area , vigencia, idUsuario,token,actividades)
                 } else {
                     // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
                     Log.e("Navigation", "itemJson es null")
                 }
+
             }
 
-            composable("detalle-documento/{item}/{username}/{area}") { backStackEntry ->
+            composable("detalle-documento/{item}/{username}/{area}/{vigencia}/{idusuario}/{token}/{actividadesJson}") { backStackEntry ->
                 val itemJson = backStackEntry.arguments?.getString("item")
 
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 val area = backStackEntry.arguments?.getString("area") ?: ""
+                val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
+                val vigencia = backStackEntry.arguments?.getString("vigencia")?.toLongOrNull() ?: 0L
+                val token = backStackEntry.arguments?.getString("token") ?: ""
+                val actividadesJson = backStackEntry.arguments?.getString("actividadesJson") ?: ""
+                val actividades = Gson().fromJson(actividadesJson, Array<ActividadItem>::class.java).toList()
+
                 if (itemJson != null) {
                     val pickingItem = Gson().fromJson(itemJson, PickingItem::class.java)
-                    DetalleDocumentoScreen(navController, pickingItem ,username,area)
+                    DetalleDocumentoScreen(navController, pickingItem ,username,area,vigencia,idUsuario,token, actividades)
                 } else {
                     // Manejar el caso donde itemJson es null, quizás mostrar un mensaje de error
                     Log.e("Navigation", "itemJson es null")
