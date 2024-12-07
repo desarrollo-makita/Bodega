@@ -47,6 +47,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.net.URLEncoder
@@ -69,13 +70,13 @@ fun CapturaSerieScreen(navController: NavController,
     var isLoading by remember { mutableStateOf(true) } // Estado para el loading
     val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
 
-
     var usuarioActivo by remember { mutableStateOf<String?>(username) }
     var area1 by remember { mutableStateOf<String?>(area) }
 
     var showDialog by remember { mutableStateOf(false) }
     var mensajeDialogo by remember { mutableStateOf("") }
     var itemPendiente by remember { mutableStateOf<PickingItem?>(null) }
+    var showDialogErrorVacio by remember { mutableStateOf(false) }
 
     fun verificarDatosPendientes(pickingList: List<PickingItem>): PickingItem? {
         val rutaArchivo = "/data/data/com.makita.ubiapp/files/picking_data_capturados.txt"
@@ -99,7 +100,29 @@ fun CapturaSerieScreen(navController: NavController,
         return null
     }
 
-
+    if (showDialogErrorVacio) {
+        AlertDialog(
+            onDismissRequest = { showDialogErrorVacio = false },
+            title = { Text("Alerta") },
+            text = { Text(mensajeDialogo) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
+                        showDialogErrorVacio = false
+                        navController.navigate("menu/$username/$area/$vigencia/$idUsuario/$token/0/$actividadesJsonEncoded")
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00909E)  // Color de fondo del botón
+                    )
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {}
+        )
+    }
     fun cargarTodaLaData() {
         isLoading = true
         coroutineScope.launch {
@@ -112,7 +135,14 @@ fun CapturaSerieScreen(navController: NavController,
                     verificarDatosPendientes(pickingList!!)
 
                 } else {
-                    errorMessage = "Error al obtener los datos: ${response.code()}"
+                    val jsonError = JSONObject(response.errorBody()?.string())
+
+                    errorMessage = jsonError.getString("error")
+                    println("Error al obtener los datos: $errorMessage")
+
+                    mensajeDialogo = errorMessage as String
+                    showDialogErrorVacio = true
+
                 }
             } catch (e: Exception) {
                 errorMessage = "Error de red: ${e.localizedMessage}"

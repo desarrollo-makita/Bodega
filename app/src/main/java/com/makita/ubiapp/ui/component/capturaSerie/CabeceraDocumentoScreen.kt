@@ -502,10 +502,6 @@ fun BodegaTextField(item : PickingItem) {
             enabled = false
         )
     }
-
-
-
-
 }
 
 @Composable

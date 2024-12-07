@@ -252,7 +252,12 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 cargarTodaLaData()
             },
                 isEnabled = areAllItemsComplete,
-                area= area
+                area= area,
+                vigencia = vigencia ,
+                idUsuario = idUsuario ,
+                token = token,
+                actividades =  actividades
+
             )
             CapturaScanner(pickingList = pickingList,
                 actualizarPickingList = { nuevaLista ->
@@ -521,7 +526,17 @@ fun ItemListTable(
 }
 
 @Composable
-fun FooterProcesar( navController: NavController , usuario: String, onActualizarClick: () -> Unit, isEnabled: Boolean , area: String) {
+fun FooterProcesar(
+    navController: NavController ,
+    usuario: String,
+    onActualizarClick: () -> Unit,
+    isEnabled: Boolean ,
+    area: String,
+    vigencia : Long ,
+    idUsuario : Int ,
+    token: String,
+    actividades: List<ActividadItem>
+    ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -529,7 +544,7 @@ fun FooterProcesar( navController: NavController , usuario: String, onActualizar
         horizontalArrangement = Arrangement.SpaceEvenly // Espacio uniforme entre los botones
     ) {
         Button(
-            onClick = { procesarDatos(navController , usuario ,area) },
+            onClick = { procesarDatos(navController , usuario ,area,vigencia, idUsuario,token, actividades) },
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
@@ -603,14 +618,14 @@ fun CapturaScanner(
         if (textoEntrada.value.text.isNotEmpty()) {
             Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length}")
             if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
-                var mockitemScannerType = "SJ401               000004158000004158Y0088381733540CLA"
+               var mockitemScannerType = "CLX224SAX           000004158000004158Y0088381733540CLA"
 
-             /*   itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+              /*itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
                 ean = textoEntrada.value.text.substring(0,20).trim()
-*/
+            */
 
                 itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
@@ -959,7 +974,14 @@ fun LoadingIndicator() {
     }
 }
 
-fun procesarDatos(navController: NavController, usuario: String, area: String) {
+fun procesarDatos(navController: NavController,
+                  usuario: String,
+                  area: String,
+                  vigencia : Long ,
+                  idUsuario : Int ,
+                  token: String,
+                  actividades: List<ActividadItem>
+                  ) {
     val capturas = leerArchivoCapturaCompleto()
     val username = usuario
     val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
@@ -984,7 +1006,9 @@ fun procesarDatos(navController: NavController, usuario: String, area: String) {
 
                     // Cambiar al hilo principal para hacer la navegación
                     withContext(Dispatchers.Main) {
-                        navController.navigate("picking/$username/$area")
+                        val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
+                        navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
                     }
                 } else {
                     Log.e("Error Proceso", "Error al enviar datos: ${response.code()} - ${response.message()}")
