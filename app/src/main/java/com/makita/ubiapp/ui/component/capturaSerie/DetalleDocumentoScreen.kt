@@ -618,21 +618,21 @@ fun CapturaScanner(
         if (textoEntrada.value.text.isNotEmpty()) {
             Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length}")
             if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
-               var mockitemScannerType = "CLX224SAX           000004158000004158Y0088381733540CLA"
+              // var mockitemScannerType = "KP0810              000004158000004158Y0088381733540CLA"
 
-              /*itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+              itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
                 ean = textoEntrada.value.text.substring(0,20).trim()
-            */
 
-                itemScannerType = mockitemScannerType.substring(0,20).trim()
+
+            /*    itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 letraFabrica = mockitemScannerType.substring(38,39).trim()
                 ean = mockitemScannerType.substring(0,20).trim()
-
+            */
                 val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
 
                 if (itemDetalle == null) {

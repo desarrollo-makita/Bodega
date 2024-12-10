@@ -343,7 +343,7 @@ fun Series() {
                 color = GreenMakita,
                 fontSize = 16.sp
             ),
-            enabled = false, // Si necesitas que sea solo lectura
+
             maxLines = 5, // Permite varias líneas
             singleLine = false
         )

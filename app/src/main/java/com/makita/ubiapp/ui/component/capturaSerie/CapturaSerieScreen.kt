@@ -165,8 +165,10 @@ fun CapturaSerieScreen(navController: NavController,
             confirmButton = {
                 Button(
                     onClick = {
+                        val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                         showDialog = false
-                        navController.navigate("cabecera-documento/${Gson().toJson(itemPendiente)}/$username/$area")
+                        navController.navigate("cabecera-documento/${Gson().toJson(itemPendiente)}/$username/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
                 },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF00909E)  // Color de fondo del botón
