@@ -255,6 +255,14 @@ data class ItemResponse(
     var CodigoChile1: String
 )
 
+data class ItemStockResponse(
+    var TipoItem: String,
+    var Descripcion: String,
+    var Bodega: String,
+    var StockFinal: Int
+
+)
+
 interface ApiService {
 
     @GET("api/obtener-ubicacion/{ubicacion}")
@@ -306,5 +314,7 @@ interface ApiService {
     @GET("api/generar-etiquetaC/{item}")
     suspend fun obtenerHerramienta(@Path("item") item: String) : List<ItemResponse>
 
+    @GET("api/consultar-stock-item/{item}")
+    suspend fun consultarStock(@Path("item") item: String) : List<ItemStockResponse>
 
 }

@@ -110,7 +110,7 @@ fun UbicacionScreen(username: String) {
                     // Mostrar mensaje de error si no se encontraron datos
                     errorState = " No se encontraron datos para el item proporcionado"
                 }else{
-                    val ubicacionPrimera = ubicaciones.first() // Usar el primer elemento de la lista como ejemplo
+                    val ubicacionPrimera = ubicaciones.first()
                     bitacoraRegistro(
                         username = username,
                         ubicacion = ubicacionPrimera,
@@ -209,7 +209,7 @@ fun UbicacionScreen(username: String) {
                     .padding(bottom = 16.dp)
                     .focusRequester(focusRequester),
                 shape = RoundedCornerShape(12.dp),
-                label = {
+                label = {       
                     Text(
                         "Escanear Item",
                         style = TextStyle(

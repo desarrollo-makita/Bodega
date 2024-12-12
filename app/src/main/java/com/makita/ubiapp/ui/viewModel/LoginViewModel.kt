@@ -11,7 +11,7 @@ import com.makita.ubiapp.RetrofitClient
 
 import kotlinx.coroutines.launch
 
-class LoginViewModel : ViewModel() {
+open class LoginViewModel : ViewModel() {
     var nombreUsuario = mutableStateOf("")
     var clave = mutableStateOf("")
     var errorState = mutableStateOf<String?>(null)

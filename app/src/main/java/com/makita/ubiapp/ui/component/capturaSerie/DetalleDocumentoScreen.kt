@@ -490,8 +490,10 @@ fun ItemListTable(
                                                     showDialog.value = true
                                                 } else {
                                                     // Si la validación pasa, navegar al siguiente componente
-                                                    val itemJson = Gson().toJson(item) // Serializamos el objeto
-                                                    navController.navigate("procesar-sin-codigo-barra/$itemJson/${correlativoOrigen.toString()}/${correlativo.toString()}/$username/$area")
+                                                    val itemJson = URLEncoder.encode(Gson().toJson(item), StandardCharsets.UTF_8.toString())
+
+                                                    Log.d("*MAKITA*" , "ITEMJSON :_ $itemJson")
+                                                    navController.navigate("procesar-sin-codigo-barra/$itemJson/${correlativoOrigen}/${correlativo}/$username/$area")
                                                 }
                                             }
 
@@ -618,21 +620,20 @@ fun CapturaScanner(
         if (textoEntrada.value.text.isNotEmpty()) {
             Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length}")
             if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
-              // var mockitemScannerType = "KP0810              000004158000004158Y0088381733540CLA"
+               // var mockitemScannerType = "GA9050              000152668000152669K0088381606073CL"
 
-              itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
                 ean = textoEntrada.value.text.substring(0,20).trim()
 
-
-            /*    itemScannerType = mockitemScannerType.substring(0,20).trim()
+              /*  itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 letraFabrica = mockitemScannerType.substring(38,39).trim()
                 ean = mockitemScannerType.substring(0,20).trim()
-            */
+*/
                 val itemDetalle = pickingListState.value.find { it.item == itemScannerType }
 
                 if (itemDetalle == null) {
@@ -641,10 +642,19 @@ fun CapturaScanner(
                     textoEntrada.value = TextFieldValue("")
                     itemScannerType= ""
                 } else if(itemDetalle != null) {
+                    Log.d("*MAKITA*" , "CANTIDAD , $itemDetalle ")
 
                     if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
                             actualizarMensajeError("El ítem ($itemScannerType) ya está completo. No se requiere más cantidad.")
-                    }else if(serieInicial == serieFinal ){ //unitario
+                    }
+
+                    else if(serieFinal.toInt() - serieInicial.toInt()+1 > itemDetalle.CantidadPedida){
+                        actualizarMensajeError("El ítem ($itemScannerType) Scaneado contiene mas unidades de las que se pide.")
+                    }
+                    else if(serieFinal.toInt() - serieInicial.toInt()+1 + itemDetalle.Cantidad > itemDetalle.CantidadPedida){
+                        actualizarMensajeError("El ítem ($itemScannerType) Scaneado contiene mas unidades de las que se pide.")
+                    }
+                    else if(serieInicial == serieFinal ){ //unitario
                         val catidadUnitaria = 0
                         actualizarMensajeError("")
                         procesarDataUnitario(item ,usuario,pickingListState ,actualizarPickingList ,itemScannerType ,catidadUnitaria,serieInicial ,serieFinal ,

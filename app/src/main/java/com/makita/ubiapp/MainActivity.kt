@@ -19,6 +19,7 @@ import com.google.gson.Gson
 import com.makita.ubiapp.ui.component.capturaSerie.CabeceraDocumentoScreen
 import com.makita.ubiapp.ui.component.capturaSerie.DetalleDocumentoScreen
 import com.makita.ubiapp.ui.component.capturaSerie.ProcesarSinCodigoBarraScreen
+import com.makita.ubiapp.ui.component.consultaStock.ConsultaStockScreen
 import com.makita.ubiapp.ui.component.etiquetas.EtiquetasScreen
 import com.makita.ubiapp.ui.component.login.LoginScreen
 import com.makita.ubiapp.ui.component.ubicaciones.CapturaSerieScreen
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
         ) {
             composable("login") {
                 LoginScreen(
-
+                    navController,
                     onLoginSuccess = { username, area ,vigencia,idUsuario ,token , recuperarClave, actividades ->
 
                         DeviceInfoUtil.registrarInformacionDispositivo(context = this@MainActivity, nombreUsuario = username)
@@ -215,6 +216,10 @@ class MainActivity : ComponentActivity() {
             composable("etiquetado/") { backStackEntry ->
                 EtiquetasScreen()
             }
+            composable("consultaStock/") { backStackEntry ->
+                ConsultaStockScreen()
+            }
+
 
         }
     }

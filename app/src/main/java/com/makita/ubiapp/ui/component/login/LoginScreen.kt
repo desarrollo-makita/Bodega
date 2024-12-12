@@ -3,6 +3,8 @@ package com.makita.ubiapp.ui.component.login
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Configuration.UI_MODE_NIGHT_NO
+import android.util.Log
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -33,6 +36,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.makita.ubiapp.R
@@ -40,11 +44,14 @@ import com.makita.ubiapp.R
 import com.makita.ubiapp.ui.dialogs.PasswordRecoveryDialog
 import com.makita.ubiapp.ui.theme.GreenMakita
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.makita.ubiapp.ActividadItem
+import com.makita.ubiapp.PickingItem
 
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int , List<ActividadItem>) -> Unit) {
+fun LoginScreen(navController: NavController , onLoginSuccess: (String, String, Long, Int, String , Int , List<ActividadItem>) -> Unit) {
 
     val loginViewModel: LoginViewModel = viewModel()
     val context = LocalContext.current
@@ -206,6 +213,27 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int , List<
                 fontWeight = FontWeight.Bold // Aplica negrita
             )
         )
+       Row(
+            modifier = Modifier
+                .padding(vertical = 8.dp)
+                .clickable { navController.navigate("consultaStock/") },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Consulta de stock",
+                modifier = Modifier.size(24.dp),
+                tint = GreenMakita
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Consultar stock",
+                style = TextStyle(
+                    fontWeight = FontWeight.Bold,
+                    color = GreenMakita
+                )
+            )
+        }
 
         Spacer(modifier = Modifier.height(100.dp))
 
@@ -220,6 +248,7 @@ fun LoginScreen(onLoginSuccess: (String, String, Long, Int, String , Int , List<
         PasswordRecoveryDialog(onDismiss = { showRecoveryDialog = false })
     }
 }
+
 
 fun getAppVersion(context: Context): String {
     return try {
