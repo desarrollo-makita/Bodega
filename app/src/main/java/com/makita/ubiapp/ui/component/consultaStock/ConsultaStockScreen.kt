@@ -349,6 +349,30 @@ fun Resultado(responseStock: List<ItemStockResponse>) {
                     )
                 }
 
+                OutlinedTextField(
+                    value = TextFieldValue(stock.Ubicacion), // Mostrar la descripción
+                    onValueChange = { newValue ->
+                        stock.Ubicacion = newValue.text // Actualiza la descripción
+                    },
+                    label = { Text("UBICACION", fontWeight = FontWeight.Bold) },
+                    textStyle = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Red,
+                        fontSize = 20.sp
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth() // Asegúrate de que ocupe el ancho completo
+                        .padding(horizontal = 20.dp, vertical = 8.dp), // Ajuste de padding para el campo
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = GreenMakita,
+                        unfocusedBorderColor = GreenMakita,
+                        focusedLabelColor = GreenMakita,
+                        unfocusedLabelColor = GreenMakita,
+                        cursorColor = GreenMakita,
+                    ),
+                )
+
                 // Campo DESCRIPCION (debajo de los anteriores)
                 OutlinedTextField(
                     value = TextFieldValue(stock.Descripcion), // Mostrar la descripción

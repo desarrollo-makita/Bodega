@@ -258,6 +258,7 @@ data class ItemResponse(
 data class ItemStockResponse(
     var TipoItem: String,
     var Descripcion: String,
+    var Ubicacion : String,
     var Bodega: String,
     var StockFinal: Int
 
