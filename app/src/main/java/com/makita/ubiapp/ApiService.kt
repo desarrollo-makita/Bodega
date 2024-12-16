@@ -215,9 +215,14 @@ data class PickingDetalleItem(
 
 data class PickingDetalleResponse(
     val status: Int,
-    val data: List<PickingDetalleItem>,
-    val error: String
+    val data: PickingDetalleData,
+    val error: String?
 )
+data class PickingDetalleData(
+    val accesorios: List<PickingDetalleItem>,
+    val herramientasYKits: List<PickingDetalleItem>
+)
+
 
 data class DataUpdateCapturaReq(
     val correlativo: Int,

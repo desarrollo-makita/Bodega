@@ -111,7 +111,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
             confirmButton = {
                 Button(
                     onClick = {
-                         val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJson = Gson().toJson(actividades)
                         val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                         showDialogErrorVacio = false
                         navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
@@ -133,8 +133,15 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
             try {
                 delay(1000) // Simulación de espera
                 val response = RetrofitClient.apiService.obtenerPickingCorrelativoDetalle(item.correlativo.toString() , area.trim())
+                Log.d("*MAKITA*" , "RESPONSE : $response")
                 if (response.isSuccessful && response.body() != null) {
-                    pickingList = response.body()!!.data
+                    val data = response.body()!!.data
+                    // Verificar el área y asignar la lista correspondiente
+                    pickingList = when (area.uppercase()) {
+                        "HERRAMIENTAS" -> data.herramientasYKits
+                        "ACCESORIOS" -> data.accesorios
+                        else -> emptyList() // Lista vacía si el área no coincide
+                    }
                     errorMessage = null
 
                     // Iterar sobre los detalles y sumar la cantidad encontrada
@@ -419,8 +426,9 @@ fun ItemListTable(
 
     // Calcular cuántos ítems están completos
     val completedItemsCount = pickingList?.count { it.Cantidad == it.CantidadPedida } ?: 0
+    Log.d("MAKITA","completedItemsCount $completedItemsCount")
     val totalItemsCount = pickingList?.size ?: 0
-
+    Log.d("MAKITA","totalItemsCount $totalItemsCount")
     // Contenedor desplazable horizontal y vertical
     Box(
         modifier = Modifier
