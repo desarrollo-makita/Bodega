@@ -1,6 +1,7 @@
 package com.makita.ubiapp.ui.component.ubicaciones
 
 
+import android.media.RouteListingPreference
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,21 +15,23 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.Saver
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
+
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,9 +41,12 @@ import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import com.makita.ubiapp.ActividadItem
 import com.makita.ubiapp.CorrelativoRequest
-import com.makita.ubiapp.DataUpdateCapturaReq
+
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
+import com.makita.ubiapp.ui.component.database.AppDatabase
+import com.makita.ubiapp.ui.component.entity.PickingItemEntity
+
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +55,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
-import java.io.IOException
+
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
@@ -132,6 +138,8 @@ fun CapturaSerieScreen(navController: NavController,
                 if (response.isSuccessful && response.body() != null) {
                     pickingList = response.body()!!.data
                     errorMessage = null
+
+                    Log.d("*MAKITA*", "pickingList** ${pickingList!!.size}")
                     verificarDatosPendientes(pickingList!!)
 
                 } else {
@@ -192,26 +200,26 @@ fun CapturaSerieScreen(navController: NavController,
             }
         )
     }
-
     val fetchPickingListByFolio: (String) -> Unit = { folioValue ->
-        Log.d("*MAKITA*" , "texto que voy ingresando : $folioValue ")
-        isLoading = true
-        coroutineScope.launch {
-            try {
-                val responseFolio = RetrofitClient.apiService.obtenerPickingFolio(folioValue)
-                if (responseFolio.isSuccessful && responseFolio.body() != null) {
-                    pickingList = responseFolio.body()!!.data
-                    errorMessage = null
-                } else {
-                    errorMessage = "No se encontró el folio proporcionado."
-                }
-            } catch (e: Exception) {
-                errorMessage = "Error de red: ${e.localizedMessage}"
-            } finally {
-                isLoading = false
-            }
+        Log.d("*MAKITA*", "Texto que voy ingresando: $folioValue")
+
+        // Evitar que entre en loading cuando ya no estamos llamando a la API
+        isLoading = false
+
+
+        // Filtrar la lista para encontrar todos los elementos que contengan el texto ingresado
+        val matchingItems = pickingList?.filter {
+            it.CorrelativoOrigen.toString().contains(folioValue, ignoreCase = true) // Busca coincidencias en cualquier parte del valor
+        }
+
+        if (matchingItems.isNullOrEmpty()) {
+            errorMessage = "No se encontraron coincidencias para el folio proporcionado."
+        } else {
+            pickingList = matchingItems // Actualiza la lista a solo los elementos que coinciden
+            errorMessage = null // Limpia cualquier mensaje de error previo
         }
     }
+
 
     // Fondo degradado
     Box(modifier = Modifier
@@ -248,16 +256,19 @@ fun CapturaSerieScreen(navController: NavController,
                     verticalAlignment = Alignment.CenterVertically
 
                 ) {
-                    EscanearItemTextField(
-                        text = folioText,
-                        onTextChange = { folioText = it },
-                        onApiCall = fetchPickingListByFolio,
-                        onReloadData = {
-                            folioText=""
-                            cargarTodaLaData()
+                    pickingList?.let {
+                        EscanearItemTextField(
+                            text = folioText,
+                            onTextChange = { folioText = it },
+                            onApiCall = { folio -> fetchPickingListByFolio(folio) },
+                            onReloadData = {
+                                folioText=""
+                                cargarTodaLaData()
 
-                        }
-                    )
+                            },
+                            pickingList = it
+                        )
+                    }
                 }
                 ErrorMessage(errorMessage)
             }
@@ -321,7 +332,8 @@ fun EscanearItemTextField(
     text: String,
     onTextChange: (String) -> Unit,
     onApiCall: (String) -> Unit,
-    onReloadData: () -> Unit) {
+    onReloadData: () -> Unit,
+    pickingList: List<PickingItem>) {
 
     val coroutineScope = rememberCoroutineScope()
     var debounceJob by remember { mutableStateOf<Job?>(null) }
@@ -339,14 +351,13 @@ fun EscanearItemTextField(
                 delay(500) // Tiempo de debounce (ajustable)
 
                 if (value.isEmpty()) {
-                    onReloadData() // Llama a la función para recargar los datos si está vacío
+                    onReloadData()
                 } else {
-                    debounceJob = coroutineScope.launch {
-                        delay(500) // Tiempo de debounce (ajustable)
-                        if (value.isNotEmpty()) {
-                            onApiCall(value) // Llama a la función que consulta la API
-                        }
+
+                    val filteredList = pickingList.filter {
+                        it.CorrelativoOrigen.toString().contains(value, ignoreCase = true)
                     }
+                    onApiCall(value)
                 }
             }// Actualiza el estado
         },
@@ -566,6 +577,8 @@ fun formatDate(isoDate: String): String {
     val localDateTime = LocalDateTime.parse(isoDate, formatter)
     return localDateTime.toLocalDate().toString() // Solo devuelve la parte de la fecha
 }
+
+
 
 
 @Preview(showBackground = true)

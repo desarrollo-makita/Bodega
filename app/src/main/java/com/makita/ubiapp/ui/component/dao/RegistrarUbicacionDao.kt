@@ -10,7 +10,7 @@ import com.makita.ubiapp.ui.component.entity.RegistraUbicacionEntity
 
 @Dao
 interface RegistrarUbicacionDao {
-   @Insert
+    @Insert
     suspend fun registraUbicacion (registraUbicacion: RegistraUbicacionEntity): Unit
 
     @Query("SELECT * FROM registro_ubicacion_table ORDER BY timestamp DESC")

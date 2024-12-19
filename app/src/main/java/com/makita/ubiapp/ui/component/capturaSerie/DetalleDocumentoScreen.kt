@@ -1,5 +1,7 @@
 package com.makita.ubiapp.ui.component.capturaSerie
 
+
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,7 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
+
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -60,7 +62,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
+
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import com.makita.ubiapp.ActividadItem
@@ -70,7 +72,9 @@ import com.makita.ubiapp.InsertCapturaList
 import com.makita.ubiapp.PickingDetalleItem
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
-import com.makita.ubiapp.ui.component.ubicaciones.eliminarArchivo
+import com.makita.ubiapp.ui.component.database.AppDatabase
+import com.makita.ubiapp.ui.component.entity.PickingItemEntity
+
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,10 +89,7 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 
-val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
-    save = { it.text }, // Guarda solo el texto
-    restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
-)
+
 @Composable
 fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usuario: String, area : String, vigencia : Long ,
                            idUsuario : Int ,
@@ -102,6 +103,9 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
     val areAllItemsComplete = pickingList?.all { it.Cantidad == it.CantidadPedida } == true
 
     var showDialogErrorVacio by remember { mutableStateOf(false) }
+    var isDataEmpty by remember { mutableStateOf(false)  }
+
+
 
     if (showDialogErrorVacio) {
         AlertDialog(
@@ -133,16 +137,21 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
             try {
                 delay(1000) // Simulación de espera
                 val response = RetrofitClient.apiService.obtenerPickingCorrelativoDetalle(item.correlativo.toString() , area.trim())
-                Log.d("*MAKITA*" , "RESPONSE : $response")
+
                 if (response.isSuccessful && response.body() != null) {
                     val data = response.body()!!.data
+
+                    Log.d("*MAKITA*" , "dataaaaaaa : $data")
                     // Verificar el área y asignar la lista correspondiente
                     pickingList = when (area.uppercase()) {
                         "HERRAMIENTAS" -> data.herramientasYKits
                         "ACCESORIOS" -> data.accesorios
                         else -> emptyList() // Lista vacía si el área no coincide
                     }
+                    isDataEmpty = data.herramientasYKits.isEmpty()
+
                     errorMessage = null
+
 
                     // Iterar sobre los detalles y sumar la cantidad encontrada
                     pickingList?.forEach { detalleItem ->
@@ -263,7 +272,8 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 vigencia = vigencia ,
                 idUsuario = idUsuario ,
                 token = token,
-                actividades =  actividades
+                actividades =  actividades,
+                isDataEmpty = isDataEmpty
 
             )
             CapturaScanner(pickingList = pickingList,
@@ -409,6 +419,7 @@ fun ItemListTable(
         username: String ,
         area: String) {
 
+    Log.d("*MAKITA*" , "pickingList---->ItemListTable $pickingList")
     val showDialog = remember { mutableStateOf(false) }
     val itemToShowMessage = remember { mutableStateOf<PickingDetalleItem?>(null) }
 
@@ -545,8 +556,10 @@ fun FooterProcesar(
     vigencia : Long ,
     idUsuario : Int ,
     token: String,
-    actividades: List<ActividadItem>
+    actividades: List<ActividadItem>,
+    isDataEmpty : Boolean
     ) {
+    Log.d("*MAKITA*" , "isDataEmpty---> $isDataEmpty")
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1083,6 +1096,9 @@ fun leerArchivoCapturaCompleto(): List<InsertCaptura> {
 
     return emptyList()
 }
+
+
+
 
 
 
