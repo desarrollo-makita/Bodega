@@ -420,7 +420,6 @@ fun PickingListTable(navController: NavController,
                      idUsuario: Int,
                      token: String,
                      actividades: List<ActividadItem>) {
-    Log.d("*MAKITA*", ": $pickingList")
 
     // Definir las cabeceras y los campos que deseas mostrar
     val headers = listOf("Folio", "Documento Origen", "Entidad", "Fecha Documento", "Nombre Cliente")

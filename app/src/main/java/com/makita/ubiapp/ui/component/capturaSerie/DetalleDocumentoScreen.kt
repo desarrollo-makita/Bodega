@@ -1,7 +1,5 @@
 package com.makita.ubiapp.ui.component.capturaSerie
 
-
-import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,8 +70,6 @@ import com.makita.ubiapp.InsertCapturaList
 import com.makita.ubiapp.PickingDetalleItem
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
-import com.makita.ubiapp.ui.component.database.AppDatabase
-import com.makita.ubiapp.ui.component.entity.PickingItemEntity
 
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.CoroutineScope
@@ -104,8 +100,6 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
 
     var showDialogErrorVacio by remember { mutableStateOf(false) }
     var isDataEmpty by remember { mutableStateOf(false)  }
-
-
 
     if (showDialogErrorVacio) {
         AlertDialog(
@@ -152,7 +146,6 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
 
                     errorMessage = null
 
-
                     // Iterar sobre los detalles y sumar la cantidad encontrada
                     pickingList?.forEach { detalleItem ->
                         val lineasEncontradas = leerArchivoCaptura(detalleItem.item)
@@ -193,7 +186,6 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
         if (errorMessage.isNullOrEmpty()) {
             errorMessage = null // Limpia el mensaje de error
         }
-
     }
 
     // Fondo degradado y diseño principal
@@ -567,7 +559,15 @@ fun FooterProcesar(
         horizontalArrangement = Arrangement.SpaceEvenly // Espacio uniforme entre los botones
     ) {
         Button(
-            onClick = { procesarDatos(navController , usuario ,area,vigencia, idUsuario,token, actividades) },
+            onClick = {
+                if (isDataEmpty) {
+                    Log.d("*MAKITA*", "Llamando a procesarDatos")  // Log para procesarDatos
+                    procesarDatos(navController, usuario, area, vigencia, idUsuario, token, actividades)
+                } else {
+                    Log.d("*MAKITA*", "Llamando a procesarDataAccesorios")  // Log para procesarDataAccesorios
+                    procesarDataAccesorios(navController, usuario, area, vigencia, idUsuario, token, actividades)
+                } },
+
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
@@ -639,7 +639,7 @@ fun CapturaScanner(
 
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
-            Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length}")
+            Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length} ${textoEntrada.value.text.substring(0,20).trim()}")
             if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
                // var mockitemScannerType = "GA9050              000152668000152669K0088381606073CL"
 
@@ -706,30 +706,31 @@ fun CapturaScanner(
                 textoEntrada.value = TextFieldValue("")
                 itemScannerType= ""
             }
+            //ACCESORIOS CARGADORES
             else if(textoEntrada.value.text.length > 55){
 
-               // var mockitemScannerType = "999999-9            00000004600000004600088381597463000197363-40000DC18WC000000000000000000000000000000"
+                var mockitemScannerType = "196348-7            00000004600000004600088381597463000196348-70000DC18WC000000000000000000000000000000"
 
-                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+               /* itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 digito = textoEntrada.value.text.substring(38, 39).trim()
                 ean = textoEntrada.value.text.substring(39, 52).trim()
                 codigoComercial = textoEntrada.value.text.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = textoEntrada.value.text.substring(63, 73).trim()
-
-            /*    itemScannerType = mockitemScannerType.substring(0,20).trim()
+*/
+                itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 digito = mockitemScannerType.substring(38, 39).trim()
                 ean = mockitemScannerType.substring(39, 52).trim()
                 codigoComercial = mockitemScannerType.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = mockitemScannerType.substring(63, 73).trim()
-*/
+
                 val itemDetalle = pickingListState.value.find { it.item == codigoComercial }
 
                 if (itemDetalle == null) {
-                    actualizarMensajeError("El ítem ($codigoComercial) no se encuentra en la lista.")
+                    actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
 
                     textoEntrada.value = TextFieldValue("")
                     itemScannerType= ""
@@ -1053,6 +1054,53 @@ fun procesarDatos(navController: NavController,
     }
 }
 
+fun procesarDataAccesorios(navController: NavController,
+                  usuario: String,
+                  area: String,
+                  vigencia : Long ,
+                  idUsuario : Int ,
+                  token: String,
+                  actividades: List<ActividadItem>
+) {
+    val capturas = leerArchivoCapturaCompleto()
+    val username = usuario
+    val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
+    val nombreArchivo = "picking_data_capturados.txt"
+
+    val archivo = File(rutaDirectorio, nombreArchivo)
+
+    if (capturas.isNotEmpty()) {
+        val capturaList = InsertCapturaList(data = capturas)
+        // Ejecutar la tarea de red en un hilo de fondo
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Llamada a la API para insertar los datos
+                val response = RetrofitClient.apiService.insertarCapturasSeriesAccesorios(capturaList)
+
+                // Si la respuesta es exitosa, navegar a la siguiente pantalla
+                if (response.isSuccessful) {
+                    Log.d("Proceso Accesorios", "Datos enviados correctamente.")
+
+                    //elimino el archivo en el proceso exitoso
+                    archivo.delete()
+
+                    // Cambiar al hilo principal para hacer la navegación
+                    withContext(Dispatchers.Main) {
+                        val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
+                        navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
+                    }
+                } else {
+                    Log.e("Error Proceso", "Error al enviar datos: ${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("Excepción Proceso", "Excepción al enviar datos: ${e.message}")
+            }
+        }
+    } else {
+        Log.e("Archivo", "No se encontraron datos en el archivo.")
+    }
+}
 fun leerArchivoCapturaCompleto(): List<InsertCaptura> {
     val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
     val nombreArchivo = "picking_data_capturados.txt"

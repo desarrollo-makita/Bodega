@@ -317,6 +317,9 @@ interface ApiService {
 
     @POST("api/insertar-datos-capturados")
     suspend fun insertarCapturasSeries(@Body request: InsertCapturaList): Response<Unit>
+
+    @POST("api/insertar-datos-capturados-accesorios")
+    suspend fun insertarCapturasSeriesAccesorios(@Body request: InsertCapturaList): Response<Unit>
     @GET("api/generar-etiquetaC/{item}")
     suspend fun obtenerHerramienta(@Path("item") item: String) : List<ItemResponse>
 
