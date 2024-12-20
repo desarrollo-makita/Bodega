@@ -1,6 +1,8 @@
 package com.makita.ubiapp.ui.component.capturaSerie
 
 import android.util.Log
+import android.view.Gravity
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 
@@ -924,20 +926,6 @@ fun guardarArchivoPlano(
             linea = linea,
             item = item
         )
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-
-                val response = RetrofitClient.apiService.updateCapturaEnProceso(request)
-                if (response.isSuccessful) {
-                    Log.d("guardarArchivoPlano", "Datos enviados exitosamente a la API.")
-                } else {
-                    Log.e("guardarArchivoPlano", "Error al enviar datos a la API: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("guardarArchivoPlano", "Error al enviar datos a la API: ${e.message}")
-            }
-        }
     } catch (e: Exception) {
         Log.e("guardarArchivoPlano", "Error al guardar el archivo: ${e.message}")
     }
@@ -1020,6 +1008,7 @@ fun procesarDatos(navController: NavController,
     val nombreArchivo = "picking_data_capturados.txt"
 
     val archivo = File(rutaDirectorio, nombreArchivo)
+    val successMessage = "Los datos fueron enviados con éxito. Preparando la lista de Picking..."
 
     if (capturas.isNotEmpty()) {
         val capturaList = InsertCapturaList(data = capturas)
@@ -1038,6 +1027,14 @@ fun procesarDatos(navController: NavController,
 
                     // Cambiar al hilo principal para hacer la navegación
                     withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            navController.context, // Contexto para el Toast
+                            successMessage, // Mensaje a mostrar
+                            Toast.LENGTH_LONG // Duración del mensaje
+                        ).apply {
+                            setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, 0, 100) // Posición del Toast
+                            show()
+                        }
                         val actividadesJson = Gson().toJson(actividades)
                         val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                         navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
@@ -1068,6 +1065,8 @@ fun procesarDataAccesorios(navController: NavController,
     val nombreArchivo = "picking_data_capturados.txt"
 
     val archivo = File(rutaDirectorio, nombreArchivo)
+    val successMessage = "Los datos fueron enviados con éxito. Preparando la lista de Picking..."
+
 
     if (capturas.isNotEmpty()) {
         val capturaList = InsertCapturaList(data = capturas)
@@ -1086,6 +1085,14 @@ fun procesarDataAccesorios(navController: NavController,
 
                     // Cambiar al hilo principal para hacer la navegación
                     withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            navController.context, // Contexto para el Toast
+                            successMessage, // Mensaje a mostrar
+                            Toast.LENGTH_LONG // Duración del mensaje
+                        ).apply {
+                            setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, 0, 100) // Posición del Toast
+                            show()
+                        }
                         val actividadesJson = Gson().toJson(actividades)
                         val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                         navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
