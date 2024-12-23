@@ -1,6 +1,8 @@
 package com.makita.ubiapp.ui.component.capturaSerie
 
 import android.util.Log
+import android.view.Gravity
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 
@@ -85,10 +87,6 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 
-val TextFieldValueCapturaSeries: Saver<TextFieldValue, String> = Saver(
-    save = { it.text }, // Guarda solo el texto
-    restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
-)
 @Composable
 fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usuario: String, area : String, vigencia : Long ,
                            idUsuario : Int ,
@@ -996,6 +994,8 @@ fun procesarDatos(navController: NavController,
     val username = usuario
     val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
     val nombreArchivo = "picking_data_capturados.txt"
+    val successMessage = "Los datos fueron enviados con éxito. Preparando la lista de Picking..."
+
 
     val archivo = File(rutaDirectorio, nombreArchivo)
 
@@ -1016,6 +1016,15 @@ fun procesarDatos(navController: NavController,
 
                     // Cambiar al hilo principal para hacer la navegación
                     withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            navController.context, // Contexto para el Toast
+                            successMessage, // Mensaje a mostrar
+                            Toast.LENGTH_LONG // Duración del mensaje
+                        ).apply {
+                            setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, 0, 100) // Posición del Toast
+                            show()
+                        }
+
                         val actividadesJson = Gson().toJson(actividades)
                         val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                         navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
