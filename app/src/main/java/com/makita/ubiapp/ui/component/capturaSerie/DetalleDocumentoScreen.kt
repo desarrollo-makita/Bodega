@@ -33,7 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
+
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -62,7 +62,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
+
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
 import com.makita.ubiapp.ActividadItem
@@ -72,7 +72,7 @@ import com.makita.ubiapp.InsertCapturaList
 import com.makita.ubiapp.PickingDetalleItem
 import com.makita.ubiapp.PickingItem
 import com.makita.ubiapp.RetrofitClient
-import com.makita.ubiapp.ui.component.ubicaciones.eliminarArchivo
+
 import com.makita.ubiapp.ui.theme.GreenMakita
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -87,6 +87,7 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 
+
 @Composable
 fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usuario: String, area : String, vigencia : Long ,
                            idUsuario : Int ,
@@ -100,6 +101,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
     val areAllItemsComplete = pickingList?.all { it.Cantidad == it.CantidadPedida } == true
 
     var showDialogErrorVacio by remember { mutableStateOf(false) }
+    var isDataEmpty by remember { mutableStateOf(false)  }
 
     if (showDialogErrorVacio) {
         AlertDialog(
@@ -109,7 +111,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
             confirmButton = {
                 Button(
                     onClick = {
-                         val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJson = Gson().toJson(actividades)
                         val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                         showDialogErrorVacio = false
                         navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
@@ -131,8 +133,19 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
             try {
                 delay(1000) // Simulación de espera
                 val response = RetrofitClient.apiService.obtenerPickingCorrelativoDetalle(item.correlativo.toString() , area.trim())
+
                 if (response.isSuccessful && response.body() != null) {
-                    pickingList = response.body()!!.data
+                    val data = response.body()!!.data
+
+                    Log.d("*MAKITA*" , "dataaaaaaa : $data")
+                    // Verificar el área y asignar la lista correspondiente
+                    pickingList = when (area.uppercase()) {
+                        "HERRAMIENTAS" -> data.herramientasYKits
+                        "ACCESORIOS" -> data.accesorios
+                        else -> emptyList() // Lista vacía si el área no coincide
+                    }
+                    isDataEmpty = data.herramientasYKits.isEmpty()
+
                     errorMessage = null
 
                     // Iterar sobre los detalles y sumar la cantidad encontrada
@@ -175,7 +188,6 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
         if (errorMessage.isNullOrEmpty()) {
             errorMessage = null // Limpia el mensaje de error
         }
-
     }
 
     // Fondo degradado y diseño principal
@@ -254,7 +266,8 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                 vigencia = vigencia ,
                 idUsuario = idUsuario ,
                 token = token,
-                actividades =  actividades
+                actividades =  actividades,
+                isDataEmpty = isDataEmpty
 
             )
             CapturaScanner(pickingList = pickingList,
@@ -400,6 +413,7 @@ fun ItemListTable(
         username: String ,
         area: String) {
 
+    Log.d("*MAKITA*" , "pickingList---->ItemListTable $pickingList")
     val showDialog = remember { mutableStateOf(false) }
     val itemToShowMessage = remember { mutableStateOf<PickingDetalleItem?>(null) }
 
@@ -417,8 +431,9 @@ fun ItemListTable(
 
     // Calcular cuántos ítems están completos
     val completedItemsCount = pickingList?.count { it.Cantidad == it.CantidadPedida } ?: 0
+    Log.d("MAKITA","completedItemsCount $completedItemsCount")
     val totalItemsCount = pickingList?.size ?: 0
-
+    Log.d("MAKITA","totalItemsCount $totalItemsCount")
     // Contenedor desplazable horizontal y vertical
     Box(
         modifier = Modifier
@@ -535,8 +550,10 @@ fun FooterProcesar(
     vigencia : Long ,
     idUsuario : Int ,
     token: String,
-    actividades: List<ActividadItem>
+    actividades: List<ActividadItem>,
+    isDataEmpty : Boolean
     ) {
+    Log.d("*MAKITA*" , "isDataEmpty---> $isDataEmpty")
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -544,7 +561,15 @@ fun FooterProcesar(
         horizontalArrangement = Arrangement.SpaceEvenly // Espacio uniforme entre los botones
     ) {
         Button(
-            onClick = { procesarDatos(navController , usuario ,area,vigencia, idUsuario,token, actividades) },
+            onClick = {
+                if (isDataEmpty) {
+                    Log.d("*MAKITA*", "Llamando a procesarDatos")  // Log para procesarDatos
+                    procesarDatos(navController, usuario, area, vigencia, idUsuario, token, actividades)
+                } else {
+                    Log.d("*MAKITA*", "Llamando a procesarDataAccesorios")  // Log para procesarDataAccesorios
+                    procesarDataAccesorios(navController, usuario, area, vigencia, idUsuario, token, actividades)
+                } },
+
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 4.dp),
@@ -616,7 +641,7 @@ fun CapturaScanner(
 
     LaunchedEffect(textoEntrada.value.text) {
         if (textoEntrada.value.text.isNotEmpty()) {
-            Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length}")
+            Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length} ${textoEntrada.value.text.substring(0,20).trim()}")
             if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
                // var mockitemScannerType = "GA9050              000152668000152669K0088381606073CL"
 
@@ -683,30 +708,31 @@ fun CapturaScanner(
                 textoEntrada.value = TextFieldValue("")
                 itemScannerType= ""
             }
+            //ACCESORIOS CARGADORES
             else if(textoEntrada.value.text.length > 55){
 
-               // var mockitemScannerType = "999999-9            00000004600000004600088381597463000197363-40000DC18WC000000000000000000000000000000"
+                var mockitemScannerType = "196348-7            00000004600000004600088381597463000196348-70000DC18WC000000000000000000000000000000"
 
-                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+               /* itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 digito = textoEntrada.value.text.substring(38, 39).trim()
                 ean = textoEntrada.value.text.substring(39, 52).trim()
                 codigoComercial = textoEntrada.value.text.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = textoEntrada.value.text.substring(63, 73).trim()
-
-            /*    itemScannerType = mockitemScannerType.substring(0,20).trim()
+*/
+                itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 digito = mockitemScannerType.substring(38, 39).trim()
                 ean = mockitemScannerType.substring(39, 52).trim()
                 codigoComercial = mockitemScannerType.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = mockitemScannerType.substring(63, 73).trim()
-*/
+
                 val itemDetalle = pickingListState.value.find { it.item == codigoComercial }
 
                 if (itemDetalle == null) {
-                    actualizarMensajeError("El ítem ($codigoComercial) no se encuentra en la lista.")
+                    actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
 
                     textoEntrada.value = TextFieldValue("")
                     itemScannerType= ""
@@ -900,20 +926,6 @@ fun guardarArchivoPlano(
             linea = linea,
             item = item
         )
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-
-                val response = RetrofitClient.apiService.updateCapturaEnProceso(request)
-                if (response.isSuccessful) {
-                    Log.d("guardarArchivoPlano", "Datos enviados exitosamente a la API.")
-                } else {
-                    Log.e("guardarArchivoPlano", "Error al enviar datos a la API: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                Log.e("guardarArchivoPlano", "Error al enviar datos a la API: ${e.message}")
-            }
-        }
     } catch (e: Exception) {
         Log.e("guardarArchivoPlano", "Error al guardar el archivo: ${e.message}")
     }
@@ -994,10 +1006,9 @@ fun procesarDatos(navController: NavController,
     val username = usuario
     val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
     val nombreArchivo = "picking_data_capturados.txt"
-    val successMessage = "Los datos fueron enviados con éxito. Preparando la lista de Picking..."
-
 
     val archivo = File(rutaDirectorio, nombreArchivo)
+    val successMessage = "Los datos fueron enviados con éxito. Preparando la lista de Picking..."
 
     if (capturas.isNotEmpty()) {
         val capturaList = InsertCapturaList(data = capturas)
@@ -1024,7 +1035,6 @@ fun procesarDatos(navController: NavController,
                             setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, 0, 100) // Posición del Toast
                             show()
                         }
-
                         val actividadesJson = Gson().toJson(actividades)
                         val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
                         navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
@@ -1041,6 +1051,63 @@ fun procesarDatos(navController: NavController,
     }
 }
 
+fun procesarDataAccesorios(navController: NavController,
+                  usuario: String,
+                  area: String,
+                  vigencia : Long ,
+                  idUsuario : Int ,
+                  token: String,
+                  actividades: List<ActividadItem>
+) {
+    val capturas = leerArchivoCapturaCompleto()
+    val username = usuario
+    val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
+    val nombreArchivo = "picking_data_capturados.txt"
+
+    val archivo = File(rutaDirectorio, nombreArchivo)
+    val successMessage = "Los datos fueron enviados con éxito. Preparando la lista de Picking..."
+
+
+    if (capturas.isNotEmpty()) {
+        val capturaList = InsertCapturaList(data = capturas)
+        // Ejecutar la tarea de red en un hilo de fondo
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Llamada a la API para insertar los datos
+                val response = RetrofitClient.apiService.insertarCapturasSeriesAccesorios(capturaList)
+
+                // Si la respuesta es exitosa, navegar a la siguiente pantalla
+                if (response.isSuccessful) {
+                    Log.d("Proceso Accesorios", "Datos enviados correctamente.")
+
+                    //elimino el archivo en el proceso exitoso
+                    archivo.delete()
+
+                    // Cambiar al hilo principal para hacer la navegación
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            navController.context, // Contexto para el Toast
+                            successMessage, // Mensaje a mostrar
+                            Toast.LENGTH_LONG // Duración del mensaje
+                        ).apply {
+                            setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, 0, 100) // Posición del Toast
+                            show()
+                        }
+                        val actividadesJson = Gson().toJson(actividades)
+                        val actividadesJsonEncoded = URLEncoder.encode(actividadesJson, StandardCharsets.UTF_8.toString())
+                        navController.navigate("picking/$usuario/$area/$vigencia/$idUsuario/$token/$actividadesJsonEncoded")
+                    }
+                } else {
+                    Log.e("Error Proceso", "Error al enviar datos: ${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("Excepción Proceso", "Excepción al enviar datos: ${e.message}")
+            }
+        }
+    } else {
+        Log.e("Archivo", "No se encontraron datos en el archivo.")
+    }
+}
 fun leerArchivoCapturaCompleto(): List<InsertCaptura> {
     val rutaDirectorio = "/data/data/com.makita.ubiapp/files"
     val nombreArchivo = "picking_data_capturados.txt"
@@ -1084,6 +1151,9 @@ fun leerArchivoCapturaCompleto(): List<InsertCaptura> {
 
     return emptyList()
 }
+
+
+
 
 
 

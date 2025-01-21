@@ -57,13 +57,6 @@ import com.makita.ubiapp.ui.theme.GreenMakita
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-
-// conserva los datos cuando cambia de orientacion el dispositivo
-val TextFieldValueCapturaSerie: Saver<TextFieldValue, String> = Saver(
-    save = { it.text }, // Guarda solo el texto
-    restore = { TextFieldValue(it) } // Restaura el estado del texto en un nuevo TextFieldValue
-)
-
 @Composable
 fun CabeceraDocumentoScreen(navController: NavController , item: PickingItem , usuario:String, area: String, vigencia : Long ,
                             idUsuario : Int ,

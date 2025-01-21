@@ -215,9 +215,14 @@ data class PickingDetalleItem(
 
 data class PickingDetalleResponse(
     val status: Int,
-    val data: List<PickingDetalleItem>,
-    val error: String
+    val data: PickingDetalleData,
+    val error: String?
 )
+data class PickingDetalleData(
+    val accesorios: List<PickingDetalleItem>,
+    val herramientasYKits: List<PickingDetalleItem>
+)
+
 
 data class DataUpdateCapturaReq(
     val correlativo: Int,
@@ -312,6 +317,9 @@ interface ApiService {
 
     @POST("api/insertar-datos-capturados")
     suspend fun insertarCapturasSeries(@Body request: InsertCapturaList): Response<Unit>
+
+    @POST("api/insertar-datos-capturados-accesorios")
+    suspend fun insertarCapturasSeriesAccesorios(@Body request: InsertCapturaList): Response<Unit>
     @GET("api/generar-etiquetaC/{item}")
     suspend fun obtenerHerramienta(@Path("item") item: String) : List<ItemResponse>
 
