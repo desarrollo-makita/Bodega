@@ -144,7 +144,7 @@ fun DetalleDocumentoScreen(navController: NavController, item: PickingItem , usu
                         "ACCESORIOS" -> data.accesorios
                         else -> emptyList() // Lista vacía si el área no coincide
                     }
-                    isDataEmpty = data.herramientasYKits.isEmpty()
+                    isDataEmpty = data.accesorios.isEmpty()
 
                     errorMessage = null
 
@@ -562,7 +562,7 @@ fun FooterProcesar(
     ) {
         Button(
             onClick = {
-                if (isDataEmpty) {
+                if (isDataEmpty || area == "Herramientas") {
                     Log.d("*MAKITA*", "Llamando a procesarDatos")  // Log para procesarDatos
                     procesarDatos(navController, usuario, area, vigencia, idUsuario, token, actividades)
                 } else {
@@ -640,10 +640,12 @@ fun CapturaScanner(
     }
 
     LaunchedEffect(textoEntrada.value.text) {
+        Log.d("ErrorMakita" , "ENTRO ${textoEntrada.value}")
         if (textoEntrada.value.text.isNotEmpty()) {
-            Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length} ${textoEntrada.value.text.substring(0,20).trim()}")
-            if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=55){
-               // var mockitemScannerType = "GA9050              000152668000152669K0088381606073CL"
+            Log.d("*MAKITA*","Largo del texto _:  ${textoEntrada.value.text.length}")
+            if(textoEntrada.value.text.length > 39 && textoEntrada.value.text.length <=62){
+                //Log.d("ErrorMakita" , "ENTRO")
+            //var mockitemScannerType = "DGA454Z             000255456000255456Y0088381683869CLA"
 
                 itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
@@ -651,7 +653,11 @@ fun CapturaScanner(
                 letraFabrica = textoEntrada.value.text.substring(38,39).trim()
                 ean = textoEntrada.value.text.substring(0,20).trim()
 
-              /*  itemScannerType = mockitemScannerType.substring(0,20).trim()
+
+
+
+
+              /*itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 letraFabrica = mockitemScannerType.substring(38,39).trim()
@@ -665,7 +671,7 @@ fun CapturaScanner(
                     textoEntrada.value = TextFieldValue("")
                     itemScannerType= ""
                 } else if(itemDetalle != null) {
-                    Log.d("*MAKITA*" , "CANTIDAD , $itemDetalle ")
+                    Log.d("*MAKITA00*" , "CANTIDAD , $itemDetalle ")
 
                     if (itemDetalle.Cantidad >= itemDetalle.CantidadPedida) {
                             actualizarMensajeError("El ítem ($itemScannerType) ya está completo. No se requiere más cantidad.")
@@ -680,7 +686,15 @@ fun CapturaScanner(
                     else if(serieInicial == serieFinal ){ //unitario
                         val catidadUnitaria = 0
                         actualizarMensajeError("")
-                        procesarDataUnitario(item ,usuario,pickingListState ,actualizarPickingList ,itemScannerType ,catidadUnitaria,serieInicial ,serieFinal ,
+                        procesarDataUnitario(
+                            item ,
+                            usuario,
+                            pickingListState
+                            ,actualizarPickingList ,
+                            itemScannerType ,
+                            catidadUnitaria,
+                            serieInicial ,
+                            serieFinal ,
                             actualizarMensajeError = {
                                 mensaje -> actualizarMensajeError(mensaje)
                             }
@@ -709,28 +723,33 @@ fun CapturaScanner(
                 itemScannerType= ""
             }
             //ACCESORIOS CARGADORES
-            else if(textoEntrada.value.text.length > 55){
+            else if(textoEntrada.value.text.length >= 63){
+                Log.d("*MAKITA00*" , "ACCESORIOS")
+               // var mockitemScannerType = "999999-9            00000119600000119600000000000000000630718-50000DC18RC000000000000000000000000000000"
 
-                var mockitemScannerType = "196348-7            00000004600000004600088381597463000196348-70000DC18WC000000000000000000000000000000"
-
-               /* itemScannerType = textoEntrada.value.text.substring(0,20).trim()
+                itemScannerType = textoEntrada.value.text.substring(0,20).trim()
                 serieInicial = textoEntrada.value.text.substring(20,29).trim()
                 serieFinal = textoEntrada.value.text.substring(29,38).trim()
                 digito = textoEntrada.value.text.substring(38, 39).trim()
                 ean = textoEntrada.value.text.substring(39, 52).trim()
                 codigoComercial = textoEntrada.value.text.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = textoEntrada.value.text.substring(63, 73).trim()
-*/
-                itemScannerType = mockitemScannerType.substring(0,20).trim()
+
+                textoEntrada.value = TextFieldValue("")
+            /*   itemScannerType = mockitemScannerType.substring(0,20).trim()
                 serieInicial = mockitemScannerType.substring(20,29).trim()
                 serieFinal = mockitemScannerType.substring(29,38).trim()
                 digito = mockitemScannerType.substring(38, 39).trim()
                 ean = mockitemScannerType.substring(39, 52).trim()
                 codigoComercial = mockitemScannerType.substring(53, 63).trim().replace("^0+".toRegex(), "")
                 codigoChile = mockitemScannerType.substring(63, 73).trim()
+*/
+                Log.d("makita" , "codigoComercial $codigoComercial")
 
-                val itemDetalle = pickingListState.value.find { it.item == codigoComercial }
-
+                val itemDetalle = pickingListState.value.find {
+                    Log.d("makita", "Comparando item: ${it.item} con codigoComercial: $codigoComercial")
+                    it.item == codigoComercial
+                }
                 if (itemDetalle == null) {
                     actualizarMensajeError("El ítem ($itemScannerType) no se encuentra en la lista.")
 
@@ -745,7 +764,31 @@ fun CapturaScanner(
                     }else if(serieInicial == serieFinal ){ //unitario
                         val catidadUnitaria = 0
                         actualizarMensajeError("")
-                        procesarDataUnitario(item ,usuario,pickingListState ,actualizarPickingList ,codigoComercial ,catidadUnitaria,serieInicial ,serieFinal ,
+                        procesarDataUnitario(
+                            item ,
+                            usuario,
+                            pickingListState ,
+                            actualizarPickingList ,
+                            codigoComercial ,
+                            catidadUnitaria,
+                            serieInicial ,
+                            serieFinal ,
+                            actualizarMensajeError = {
+                                    mensaje -> actualizarMensajeError(mensaje)
+                            }
+                        )
+                    }else{
+                        val cantidadMaster = serieFinal.toInt() - serieInicial.toInt()
+                        Log.d("Caja master  :" , "Caja master : $cantidadMaster")
+                        procesarDataMaster(
+                            item,
+                            usuario ,
+                            pickingListState ,
+                            actualizarPickingList ,
+                            itemScannerType ,
+                            cantidadMaster,
+                            serieInicial ,
+                            serieFinal,
                             actualizarMensajeError = {
                                     mensaje -> actualizarMensajeError(mensaje)
                             }
@@ -754,6 +797,7 @@ fun CapturaScanner(
                 }
             }
             else{
+                Log.d("ErrorMakita" , "ENTRO3")
                 actualizarMensajeError("El código escaneado no corresponde.")
                 textoEntrada.value = TextFieldValue("")
                 itemScannerType= ""
@@ -789,7 +833,7 @@ private fun procesarDataUnitario(
     actualizarMensajeError: (String) -> Unit
 ) {
     val archivo = File("/data/data/com.makita.ubiapp/files", "picking_data_capturados.txt")
-
+    Log.d("*MAKITA00*" , "PASO POR ACA")
     if (archivo.exists()) {
         val validarSerie = validarSerieEnArchivo(itemCorrelativo.correlativo, serieInicial, archivo )
 
@@ -932,6 +976,10 @@ fun guardarArchivoPlano(
 }
 fun validarSerieEnArchivo(correlativo: Int, nuevaSerie: String , archivo: File, serieFinal: String? = null): Boolean {
 
+
+    Log.d("MAKITA00", "correlativo $correlativo")
+    Log.d("MAKITA00", "nuevaSerie $nuevaSerie")
+    Log.d("MAKITA00", "archivo $archivo")
     // Leer las líneas del archivo
     val lineas = archivo.readLines()
 
@@ -944,6 +992,10 @@ fun validarSerieEnArchivo(correlativo: Int, nuevaSerie: String , archivo: File, 
 
             val correlativoArchivo = campos[2]
             val serieArchivo = campos[11]
+
+            Log.d("MAKITA00", "correlativoArchivo $correlativoArchivo")
+            Log.d("MAKITA00", "serieArchivo $serieArchivo")
+
 
             if (correlativo == correlativoArchivo.toInt() && serieArchivo == nuevaSerie) {
 
@@ -1023,7 +1075,7 @@ fun procesarDatos(navController: NavController,
                     Log.d("Proceso", "Datos enviados correctamente.")
 
                     //elimino el archivo en el proceso exitoso
-                    archivo.delete()
+                  archivo.delete()
 
                     // Cambiar al hilo principal para hacer la navegación
                     withContext(Dispatchers.Main) {
